@@ -37,3 +37,7 @@ for c in params:
 # Parametres caméra
 XDIM = 256
 YDIM = 320
+PIXEL_SIZE = 25e-6
+
+# Paramètres banc harmo
+FOCAL_LENGTH = 1
