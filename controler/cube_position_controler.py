@@ -21,7 +21,8 @@ class CubePositionControler(metaclass=SingletonMeta):
         self.camera_window.show()
         self.camera_window.set_callback_timer(self.camera_window.timer, self.update_gui)
         self.camera_window.set_timer_timeout(self.camera_window.timer, DELAY)
-        self.camera_window.set_callback_connect_button(self.camera_window.button_spot_position, self.run_position_cube_on_new_thread)
+        self.camera_window.set_callback_connect_button(self.camera_window.button_action, self.run_position_cube_on_new_thread)
+        self.camera_window.set_button_label(self.camera_window.button_action, 'Enregistrer position du cube')
         self.camera_window.set_callback_connect_button(self.camera_window.button_next, self.next_button_action)
         self.camera_window.set_callback_connect_button(self.camera_window.button_exit, self.exit_application_action)
         if get_active_camera().__class__.__name__ == "SimulationCamera":
@@ -39,14 +40,14 @@ class CubePositionControler(metaclass=SingletonMeta):
 
     def build_instructions_text(self):
         self.instruction_text = ""
-        if type(self.camera_window.button_spot_position_state) == ButtonOk:
+        if type(self.camera_window.button_action_state) == ButtonOk:
             pass
         else:
             self.instruction_text += "Enregistrer la position du cube"
         
     def update_gui(self):
         # Mise à jour de la GUI en se basant sur les états des widgets
-        self.camera_window.button_spot_position_state.change_color()
+        self.camera_window.button_action_state.change_color()
 
         self.np_image = get_active_camera().snapshot() 
         # On met à jour l'image de la camera
@@ -104,7 +105,7 @@ class CubePositionControler(metaclass=SingletonMeta):
         data.save()
         self.qimage.save(f'results/{data.sn}/{data.read("SN")}_CUBE_POSITION.png', 'PNG')
         self.camera_window.log_text = f'Position du cube enregistrée : X={params["x_center"]:.2f}, Y={params["y_center"]:.2f}'
-        self.camera_window.button_spot_position_state = ButtonOk(self.camera_window.button_spot_position)
+        self.camera_window.button_action_state = ButtonOk(self.camera_window.button_action)
    
     def next_button_action(self):
             if len(self.instruction_text) == 0:

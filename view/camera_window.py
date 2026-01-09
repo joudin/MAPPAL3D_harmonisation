@@ -52,7 +52,7 @@ class CameraWindow(QWidget):
         self.log_label.setFont(QFont("Roboto", 8))
 
         # Bouton pour calculer la position du spot
-        self.button_spot_position = QPushButton('Enregistrer position du spot', self)
+        self.button_action = QPushButton('Action', self)
 
         # Bouton pour passer à la suite de la séquence de programmation
         self.button_next = QPushButton('Suivant', self)
@@ -82,7 +82,7 @@ class CameraWindow(QWidget):
             slider_layout_h_3.addWidget(self.slider_width)
             main_layout_v.addLayout(slider_layout_h_3)
 
-        main_layout_v.addWidget(self.button_spot_position)
+        main_layout_v.addWidget(self.button_action)
         main_layout_v.addWidget(self.button_next)
         main_layout_v.addWidget(self.button_exit)
         main_layout_v.addWidget(self.log_label)
@@ -90,7 +90,7 @@ class CameraWindow(QWidget):
         self.setLayout(main_layout_v)
 
         # Liste des widgets necessitant un suivi de leur etat
-        self.button_spot_position_state = ButtonNok(self.button_spot_position)
+        self.button_action_state = ButtonNok(self.button_action)
 
         self.timer = QtCore.QTimer(self)
 
@@ -116,4 +116,6 @@ class CameraWindow(QWidget):
     def set_slider_value(self, slider:QSlider, value:int):
         slider.setValue(value)
 
+    def set_button_label(self, button:QPushButton, label:str):
+        button.setText(label)
     

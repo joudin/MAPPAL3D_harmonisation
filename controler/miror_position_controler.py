@@ -1,15 +1,15 @@
 
 from turtle import color
-from view.widget_state import ButtonOk, ComboBoxOk, ComboBoxNok
+from view.widget_state import ButtonOk, ButtonNok
 from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QPen, QColor
 from tools.singleton import SingletonMeta
-from model.data_supplements import VERSION, XDIM, YDIM
+from model.data_supplements import VERSION, XDIM, YDIM, EUCLIDIAN_DISTANCE_CUBE_MIROR_THRESHOLD_IN_PX
 from model.camera import  get_active_camera
 from model.harmonisation_data import get_active_harmonisation_data
 from view.camera_window import CameraWindow
 import cv2
-from model.calculations import get_gauss_fit_params
+from model.calculations import get_gauss_fit_params, get_euclidian_distance
 import threading
 import time
 
@@ -22,7 +22,8 @@ class MirorPositionControler(metaclass=SingletonMeta):
         self.camera_window.show()
         self.camera_window.set_callback_timer(self.camera_window.timer, self.update_gui)
         self.camera_window.set_timer_timeout(self.camera_window.timer, DELAY)
-        self.camera_window.set_callback_connect_button(self.camera_window.button_spot_position, self.run_position_miror_on_new_thread)
+        self.camera_window.set_callback_connect_button(self.camera_window.button_action, self.run_position_miror_on_new_thread)
+        self.camera_window.set_button_label(self.camera_window.button_action, 'Enregistrer position du miroir')
         self.camera_window.set_callback_connect_button(self.camera_window.button_next, self.next_button_action)
         self.camera_window.set_callback_connect_button(self.camera_window.button_exit, self.exit_application_action)
         if get_active_camera().__class__.__name__ == "SimulationCamera":
@@ -40,14 +41,14 @@ class MirorPositionControler(metaclass=SingletonMeta):
 
     def build_instructions_text(self):
         self.instruction_text = ""
-        if type(self.camera_window.button_spot_position_state) == ButtonOk:
+        if type(self.camera_window.button_action_state) == ButtonOk:
             pass
         else:
             self.instruction_text += "Enregistrer la position du miroir"
         
     def update_gui(self):
         # Mise à jour de la GUI en se basant sur les états des widgets
-        self.camera_window.button_spot_position_state.change_color()
+        self.camera_window.button_action_state.change_color()
 
         self.np_image = get_active_camera().snapshot() 
         # On met à jour l'image de la camera
@@ -111,9 +112,13 @@ class MirorPositionControler(metaclass=SingletonMeta):
         data.write("MIROR_POSITION_Y", str(params['y_center']))
         data.save()
         self.qimage.save(f'results/{data.sn}/{data.read("SN")}_MIROR_POSITION.png', 'PNG')
-        self.camera_window.log_text = f'Position du miroir enregistrée : X={params["x_center"]:.2f}, Y={params["y_center"]:.2f}'
-        self.camera_window.button_spot_position_state = ButtonOk(self.camera_window.button_spot_position)
-   
+        data.distance_cube_miror_in_px = get_euclidian_distance((data.cube_position_x, data.cube_position_y), (data.miror_position_x, data.miror_position_y))['euclidian']
+        if data.distance_cube_miror_in_px <= EUCLIDIAN_DISTANCE_CUBE_MIROR_THRESHOLD_IN_PX:
+            self.camera_window.button_action_state = ButtonOk(self.camera_window.button_action)
+            self.camera_window.log_text = f'Position du miroir enregistrée : X={params["x_center"]:.2f}, Y={params["y_center"]:.2f}\nDistance cube-miroir = {data.distance_cube_miror_in_px:.2f} px (OK max ={EUCLIDIAN_DISTANCE_CUBE_MIROR_THRESHOLD_IN_PX} px)'
+        else:
+            self.camera_window.button_action_state = ButtonNok(self.camera_window.button_action)
+            self.camera_window.log_text = f'Position du miroir enregistrée : X={params["x_center"]:.2f}, Y={params["y_center"]:.2f}\nDistance cube-miroir = {data.distance_cube_miror_in_px:.2f} px (NOK max ={EUCLIDIAN_DISTANCE_CUBE_MIROR_THRESHOLD_IN_PX} px)'
     def next_button_action(self):
             if len(self.instruction_text) == 0:
                 cam = get_active_camera()
