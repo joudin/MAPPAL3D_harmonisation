@@ -3,6 +3,17 @@ import os
 from tools.singleton import SingletonMeta
 from model.data_supplements import VERSION
 
+
+# Active harmonisation data accessor (service) : stocke l'instance de données harmonisation créée
+_active_harmonisation_data = None
+
+def get_active_harmonisation_data():
+    return _active_harmonisation_data
+
+def _set_active_harmonisation_data(data):
+    global _active_harmonisation_data
+    _active_harmonisation_data = data
+
 class HarmonisationData(metaclass=SingletonMeta):
     def write(self, key:str, value:str):
         pass
@@ -24,10 +35,14 @@ class HarmonisationData(metaclass=SingletonMeta):
 
 class JsonHarmonisationData(HarmonisationData) :
     def __init__(self):
-        self.keys_data_list = ["SOFT_VERSION","SN", "OPERATOR_NAME", "DATE"]
+        self.keys_data_list = ["SOFT_VERSION","SN", "OPERATOR_NAME", "DATE",
+                               "CUBE_POSITION_X",
+                               "CUBE_POSITION_Y"]
         
         self.data_dict = {key: None for key in self.keys_data_list}
         self.sn = ""
+        self.cube_position_x = None
+        self.cube_position_y = None
     
     def write(self, key:str, value:str):
         self.data_dict[key] = value
@@ -56,13 +71,12 @@ class JsonHarmonisationData(HarmonisationData) :
 def create_harmonisation_data(type_dest:str,sn:str) -> HarmonisationData:
     os.makedirs(f'results\\{sn}', exist_ok=True)
     fileName = f'result\\{sn}\\SN{sn}.json'
-    if type_dest.upper() == "JSON":  
+    if type_dest.upper() == "JSON": 
+        data = JsonHarmonisationData() 
         if os.path.exists(fileName):
-            data = JsonHarmonisationData()
             data.load(sn)
-            return data
-        else:
-            return JsonHarmonisationData()
+        _set_active_harmonisation_data(data)
+        return data
     else:
         return None
         
