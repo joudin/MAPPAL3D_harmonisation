@@ -6,7 +6,7 @@ from tools.singleton import SingletonMeta
 from model.data_supplements import VERSION, operator_names, sn
 from model.camera import Camera, create_camera, get_active_camera
 from model.harmonisation_data import create_harmonisation_data
-from view.camera_window import CameraWindow
+from controler.camera_controler import CameraControler
 from datetime import datetime
 
 DELAY = 200
@@ -96,11 +96,8 @@ class ConnexionControler(metaclass=SingletonMeta):
             data.write("SN",str(self.connexion_window.value_comboBox_sn))
             data.write("DATE",str(datetime.now().strftime("%d/%m/%Y")))
             data.save()
-            self.camera_window = CameraWindow()
-            self.connexion_window.close()
-            self.camera_window.show()
-            self.connexion_window.stop_timer(self.connexion_window.timer)
-            self.connexion_window.set_timer_timeout(self.camera_window.timer,DELAY)
+            self.camera_controler = CameraControler()
+            QWidget.close(self.connexion_window)
         else:
             self.connexion_window.log_text = "Veuillez compléter toutes les étapes avant de continuer"
 
