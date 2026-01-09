@@ -4,27 +4,26 @@ from view.widget_state import ButtonOk, ButtonNok
 from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QPen, QColor
 from tools.singleton import SingletonMeta
-from model.data_supplements import VERSION, XDIM, YDIM, EUCLIDIAN_DISTANCE_CUBE_MIROR_THRESHOLD_IN_PX
+from model.data_supplements import XDIM, YDIM, DIVERGENCE_THRESHOLD_IN_MRAD, FOCAL_LENGTH, PIXEL_SIZE
 from model.camera import  get_active_camera
 from model.harmonisation_data import get_active_harmonisation_data
 from view.camera_window import CameraWindow
-from controler.divergence_controler import DivergenceControler
 import cv2
-from model.calculations import get_gauss_fit_params, get_euclidian_distance
+from model.calculations import get_gauss_fit_params, get_gaussian_divergence_and_diameter
 import threading
 import time
 
 DELAY = 200
 
-class MirorPositionControler(metaclass=SingletonMeta):
+class DivergenceControler(metaclass=SingletonMeta):
     def __init__(self):       
         # Comportement de la GUI
         self.camera_window = CameraWindow()
         self.camera_window.show()
         self.camera_window.set_callback_timer(self.camera_window.timer, self.update_gui)
         self.camera_window.set_timer_timeout(self.camera_window.timer, DELAY)
-        self.camera_window.set_callback_connect_button(self.camera_window.button_action, self.run_position_miror_on_new_thread)
-        self.camera_window.set_button_label(self.camera_window.button_action, 'Enregistrer position du miroir')
+        self.camera_window.set_callback_connect_button(self.camera_window.button_action, self.run_divergence_on_new_thread)
+        self.camera_window.set_button_label(self.camera_window.button_action, 'Enregistrer Divergence')
         self.camera_window.set_callback_connect_button(self.camera_window.button_next, self.next_button_action)
         self.camera_window.set_callback_connect_button(self.camera_window.button_exit, self.exit_application_action)
         if get_active_camera().__class__.__name__ == "SimulationCamera":
@@ -45,7 +44,7 @@ class MirorPositionControler(metaclass=SingletonMeta):
         if type(self.camera_window.button_action_state) == ButtonOk:
             pass
         else:
-            self.instruction_text += "Enregistrer la position du miroir"
+            self.instruction_text += "Enregistrer la divergence"
         
     def update_gui(self):
         # Mise à jour de la GUI en se basant sur les états des widgets
@@ -58,15 +57,6 @@ class MirorPositionControler(metaclass=SingletonMeta):
         bytes_per_line = width
         # Convertir en QImage
         self.qimage = QImage(colored_image.data, width, height, bytes_per_line * 3, QImage.Format_RGB888)
-        p = QPainter(self.qimage)
-        p.setPen(QPen(QColor(255, 0, 0), 1))
-        size = 10
-        p.drawLine(int(get_active_harmonisation_data().cube_position_x) - size, int(get_active_harmonisation_data().cube_position_y) - size, int(get_active_harmonisation_data().cube_position_x) + size, int(get_active_harmonisation_data().cube_position_y) + size)  # diagonale \
-        p.drawLine(int(get_active_harmonisation_data().cube_position_x) - size, int(get_active_harmonisation_data().cube_position_y) + size, int(get_active_harmonisation_data().cube_position_x) + size, int(get_active_harmonisation_data().cube_position_y) - size)  # diagonale /
-        p.end()
-        self.qimage.setPixel(int(get_active_harmonisation_data().cube_position_x), int(get_active_harmonisation_data().cube_position_y), 0xFF0000)  # Marquer la position du miroir en rouge
-        #scale_factor = 0.2  # réduire à 20%
-        #scaled_qimage = self.qimage.scaled(int(self.qimage.width() * scale_factor), int(self.qimage.height() * scale_factor))
         pixmap = QPixmap.fromImage(self.qimage)
         self.camera_window.image_label.setPixmap(pixmap)
 
@@ -91,39 +81,40 @@ class MirorPositionControler(metaclass=SingletonMeta):
         if cam.__class__.__name__ == "SimulationCamera":
             cam.width_simu = self.camera_window.slider_width.value()
 
-    def run_position_miror_on_new_thread(self):
-        self.camera_window.log_text = "Calcul de la position du miroir en cours..."
+    def run_divergence_on_new_thread(self):
+        self.camera_window.log_text = "Calcul de la divergence en cours..."
         # On lance le calcul sur un autre thread pour ne pas bloquer la GUI
-        action_thread = threading.Thread(target=self.position_miror_action) 
+        action_thread = threading.Thread(target=self.divergence_action) 
         action_thread.start()
 
-    def position_miror_action(self):
+    def divergence_action(self):
         """
-        faire un fit gaussien de l'image pour déterminer la position du miroir
-        enregistrer la position dans les data supplements
+        faire un fit gaussien de l'image pour déterminer la divergence
+        enregistrer la divergence dans les data supplements
         enregistrer l'image
         Mettre à jour le log
         Mettre à jour l'état du bouton
         """
         params = get_gauss_fit_params(self.np_image)
         data = get_active_harmonisation_data()
-        data.miror_position_x = params['x_center']
-        data.miror_position_y = params['y_center']
-        data.write("MIROR_POSITION_X", str(params['x_center']))
-        data.write("MIROR_POSITION_Y", str(params['y_center']))
+        dict_results = get_gaussian_divergence_and_diameter(params, FOCAL_LENGTH, PIXEL_SIZE)
+        data.divergence_in_mrad = dict_results['divergence']*1000  # conversion en mrad
+        data.write("DIVERGENCE_IN_MRAD", str(data.divergence_in_mrad))
         data.save()
-        self.qimage.save(f'results/{data.sn}/{data.read("SN")}_MIROR_POSITION.png', 'PNG')
-        data.distance_cube_miror_in_px = get_euclidian_distance((data.cube_position_x, data.cube_position_y), (data.miror_position_x, data.miror_position_y))['euclidian']
-        if data.distance_cube_miror_in_px <= EUCLIDIAN_DISTANCE_CUBE_MIROR_THRESHOLD_IN_PX:
+        self.qimage.save(f'results/{data.sn}/{data.read("SN")}_DIVERGENCE.png', 'PNG')
+       
+        if data.divergence_in_mrad <= DIVERGENCE_THRESHOLD_IN_MRAD:
             self.camera_window.button_action_state = ButtonOk(self.camera_window.button_action)
-            self.camera_window.log_text = f'Position du miroir enregistrée : X={params["x_center"]:.2f}, Y={params["y_center"]:.2f}\nDistance cube-miroir = {data.distance_cube_miror_in_px:.2f} px (OK max ={EUCLIDIAN_DISTANCE_CUBE_MIROR_THRESHOLD_IN_PX} px)'
+            self.camera_window.log_text = f'Divergence enregistrée :={data.divergence_in_mrad:.2f}\n (OK max ={DIVERGENCE_THRESHOLD_IN_MRAD} mrad)'
         else:
             self.camera_window.button_action_state = ButtonNok(self.camera_window.button_action)
-            self.camera_window.log_text = f'Position du miroir enregistrée : X={params["x_center"]:.2f}, Y={params["y_center"]:.2f}\nDistance cube-miroir = {data.distance_cube_miror_in_px:.2f} px (NOK max ={EUCLIDIAN_DISTANCE_CUBE_MIROR_THRESHOLD_IN_PX} px)'
+            self.camera_window.log_text = f'Divergence enregistrée :={data.divergence_in_mrad:.2f}\n (NOK max ={DIVERGENCE_THRESHOLD_IN_MRAD} mrad)'
+    
     def next_button_action(self):
             if len(self.instruction_text) == 0:
-                self.divergence_controler = DivergenceControler()
-                QWidget.close(self.camera_window)
+                cam = get_active_camera()
+                cam.disconnect()
+                self.camera_window.close()
                 self.camera_window.stop_timer(self.camera_window.timer)
             else:
                 self.camera_window.log_text = "Veuillez compléter les instructions avant de continuer."
