@@ -14,7 +14,7 @@ import time
 
 DELAY = 200
 
-class CameraControler(metaclass=SingletonMeta):
+class CubePositionControler(metaclass=SingletonMeta):
     def __init__(self):       
         # Comportement de la GUI
         self.camera_window = CameraWindow()

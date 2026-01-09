@@ -6,7 +6,7 @@ from tools.singleton import SingletonMeta
 from model.data_supplements import VERSION, operator_names, sn
 from model.camera import Camera, create_camera, get_active_camera
 from model.harmonisation_data import create_harmonisation_data
-from controler.camera_controler import CameraControler
+from controler.camera_controler import CubePositionControler
 from datetime import datetime
 
 DELAY = 200
