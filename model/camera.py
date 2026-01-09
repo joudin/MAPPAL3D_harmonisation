@@ -41,6 +41,9 @@ class SimulationCamera(Camera):
     def __init__(self,camera_type: str, camera_sn: str):
         self.camera_type = camera_type
         self.camera_sn = camera_sn
+        self.x_centroid_simu = 250
+        self.y_centroid_simu = 250
+        self.width_simu = 100
 
     @override
     def __str__(self):
@@ -58,12 +61,12 @@ class SimulationCamera(Camera):
     @override
     def snapshot(self) -> np.array:
         dim = (2000,2500)
-        np_image = (build_fake_image(dim,250,250,100,100,200) +  3 * make_random_noise(dim)).astype(np.uint8)
+        np_image = (build_fake_image(dim,self.x_centroid_simu, self.y_centroid_simu, self.width_simu,self.width_simu,200) +  3 * make_random_noise(dim)).astype(np.uint8)
         return np_image
     
     @override
     def disconnect(self):
-        print(f'Camera  {self.camera_type} disconnected')
+        print(f'Camera {self.camera_type} disconnected')
 
 
 def create_camera(camera_type: str, camera_sn: str) -> Camera:
