@@ -3,14 +3,14 @@ from view.widget_state import ButtonOk, ComboBoxOk, ComboBoxNok
 from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtGui import QImage, QPixmap
 from tools.singleton import SingletonMeta
-from model.data_supplements import VERSION
+from model.data_supplements import VERSION, XDIM, YDIM
 from model.camera import  get_active_camera
 from model.harmonisation_data import get_active_harmonisation_data
 from view.camera_window import CameraWindow
 import cv2
 from model.calculations import get_gauss_fit_params
 import threading
-import time
+from controler.miror_position_controler import MirorPositionControler
 
 DELAY = 200
 
@@ -21,32 +21,32 @@ class CubePositionControler(metaclass=SingletonMeta):
         self.camera_window.show()
         self.camera_window.set_callback_timer(self.camera_window.timer, self.update_gui)
         self.camera_window.set_timer_timeout(self.camera_window.timer, DELAY)
-        self.camera_window.set_callback_connect_button(self.camera_window.button_position_cube, self.run_position_cube_on_new_thread)
+        self.camera_window.set_callback_connect_button(self.camera_window.button_spot_position, self.run_position_cube_on_new_thread)
         self.camera_window.set_callback_connect_button(self.camera_window.button_next, self.next_button_action)
         self.camera_window.set_callback_connect_button(self.camera_window.button_exit, self.exit_application_action)
         if get_active_camera().__class__.__name__ == "SimulationCamera":
             self.camera_window.set_callback_change_slider(self.camera_window.slider_x_centroid, self.x_centroid_change_slider_action)
             self.camera_window.set_callback_change_slider(self.camera_window.slider_y_centroid, self.y_centroid_change_slider_action)
             self.camera_window.set_callback_change_slider(self.camera_window.slider_width, self.width_change_slider_action)
-            self.camera_window.set_callback_range_slider(self.camera_window.slider_x_centroid, 0, 2000)
-            self.camera_window.set_callback_range_slider(self.camera_window.slider_y_centroid, 0, 2500)
-            self.camera_window.set_callback_range_slider(self.camera_window.slider_width, 1, 500)
-            self.camera_window.set_slider_value(self.camera_window.slider_x_centroid, 250)
-            self.camera_window.set_slider_value(self.camera_window.slider_y_centroid, 250)
-            self.camera_window.set_slider_value(self.camera_window.slider_width, 100)
+            self.camera_window.set_callback_range_slider(self.camera_window.slider_x_centroid, 0, XDIM)
+            self.camera_window.set_callback_range_slider(self.camera_window.slider_y_centroid, 0, YDIM)
+            self.camera_window.set_callback_range_slider(self.camera_window.slider_width, 1, int(XDIM/2))
+            self.camera_window.set_slider_value(self.camera_window.slider_x_centroid, int(XDIM/2))
+            self.camera_window.set_slider_value(self.camera_window.slider_y_centroid, int(YDIM/2))
+            self.camera_window.set_slider_value(self.camera_window.slider_width, int(XDIM/10))
 
 ############################ Callbacks #######################################
 
     def build_instructions_text(self):
         self.instruction_text = ""
-        if type(self.camera_window.button_position_cube_state) == ButtonOk:
+        if type(self.camera_window.button_spot_position_state) == ButtonOk:
             pass
         else:
             self.instruction_text += "Enregistrer la position du cube"
         
     def update_gui(self):
         # Mise à jour de la GUI en se basant sur les états des widgets
-        self.camera_window.button_position_cube_state.change_color()
+        self.camera_window.button_spot_position_state.change_color()
 
         self.np_image = get_active_camera().snapshot() 
         # On met à jour l'image de la camera
@@ -55,9 +55,9 @@ class CubePositionControler(metaclass=SingletonMeta):
         bytes_per_line = width
         # Convertir en QImage
         self.qimage = QImage(colored_image.data, width, height, bytes_per_line * 3, QImage.Format_RGB888)
-        scale_factor = 0.2  # réduire à 20%
-        scaled_qimage = self.qimage.scaled(int(self.qimage.width() * scale_factor), int(self.qimage.height() * scale_factor))
-        pixmap = QPixmap.fromImage(scaled_qimage)
+        #scale_factor = 0.2  # réduire à 20%
+        #scaled_qimage = self.qimage.scaled(int(self.qimage.width() * scale_factor), int(self.qimage.height() * scale_factor))
+        pixmap = QPixmap.fromImage(self.qimage)
         self.camera_window.image_label.setPixmap(pixmap)
 
         # On construit le texte donnant les instructions restantes en fonction de l'état des widgets
@@ -104,13 +104,14 @@ class CubePositionControler(metaclass=SingletonMeta):
         data.save()
         self.qimage.save(f'results/{data.sn}/{data.read("SN")}_CUBE_POSITION.png', 'PNG')
         self.camera_window.log_text = f'Position du cube enregistrée : X={params["x_center"]:.2f}, Y={params["y_center"]:.2f}'
-        self.camera_window.button_position_cube_state = ButtonOk(self.camera_window.button_position_cube)
+        self.camera_window.button_spot_position_state = ButtonOk(self.camera_window.button_spot_position)
    
     def next_button_action(self):
             if len(self.instruction_text) == 0:
                 cam = get_active_camera()
                 cam.disconnect()
-                self.camera_window.close()
+                self.miror_position_controler = MirorPositionControler()
+                QWidget.close(self.camera_window)
                 self.camera_window.stop_timer(self.camera_window.timer)
             else:
                 self.camera_window.log_text = "Veuillez compléter les instructions avant de continuer."

@@ -9,6 +9,7 @@ import numpy as np
 from tools.singleton import SingletonMeta
 from typing_extensions import override
 from model.calculations import build_fake_image, make_random_noise
+from model.data_supplements import XDIM, YDIM
 
 # Active camera accessor (service) : stocke l'instance de caméra créée
 _active_camera = None
@@ -41,9 +42,9 @@ class SimulationCamera(Camera):
     def __init__(self,camera_type: str, camera_sn: str):
         self.camera_type = camera_type
         self.camera_sn = camera_sn
-        self.x_centroid_simu = 250
-        self.y_centroid_simu = 250
-        self.width_simu = 100
+        self.x_centroid_simu = int(XDIM/2)
+        self.y_centroid_simu = int(YDIM/2)
+        self.width_simu = int(XDIM/10)
 
     @override
     def __str__(self):
@@ -60,7 +61,7 @@ class SimulationCamera(Camera):
 
     @override
     def snapshot(self) -> np.array:
-        dim = (2000,2500)
+        dim = (YDIM,XDIM)
         np_image = (build_fake_image(dim,self.x_centroid_simu, self.y_centroid_simu, self.width_simu,self.width_simu,200) +  3 * make_random_noise(dim)).astype(np.uint8)
         return np_image
     

@@ -32,3 +32,7 @@ for c in params:
         VAR2 = params[c]
     else:
         print("Erreur dans le formalisme user_var.txt")
+
+# Parametres caméra
+XDIM = 256
+YDIM = 320
