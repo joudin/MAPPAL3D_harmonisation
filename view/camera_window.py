@@ -22,7 +22,7 @@ class CameraWindow(QWidget):
 
         # On implémente la GUI
         self.setWindowTitle(f'Utilitaire v{VERSION}')
-        self.setGeometry(100, 100, 900, 900)
+        self.setGeometry(100, 100, 500, 700)
         
         # Label pour informer l'utilisateur des instructions
         self.instruction_label_title = QLabel("<i><b>Instructions à réaliser</i></b>",self)
@@ -52,7 +52,7 @@ class CameraWindow(QWidget):
         self.log_label.setFont(QFont("Roboto", 8))
 
         # Bouton pour calculer la position du spot
-        self.button_centroid = QPushButton('Calculer le centroid', self)
+        self.button_position_cube = QPushButton('Enregistrer position du cube', self)
 
         # Bouton pour passer à la suite de la séquence de programmation
         self.button_next = QPushButton('Suivant', self)
@@ -82,7 +82,7 @@ class CameraWindow(QWidget):
             slider_layout_h_3.addWidget(self.slider_width)
             main_layout_v.addLayout(slider_layout_h_3)
 
-        main_layout_v.addWidget(self.button_centroid)
+        main_layout_v.addWidget(self.button_position_cube)
         main_layout_v.addWidget(self.button_next)
         main_layout_v.addWidget(self.button_exit)
         main_layout_v.addWidget(self.log_label)
@@ -90,7 +90,7 @@ class CameraWindow(QWidget):
         self.setLayout(main_layout_v)
 
         # Liste des widgets necessitant un suivi de leur etat
-        self.button_centroid_state = ButtonNok(self.button_centroid)
+        self.button_position_cube_state = ButtonNok(self.button_position_cube)
 
         self.timer = QtCore.QTimer(self)
 
@@ -105,5 +105,15 @@ class CameraWindow(QWidget):
 
     def stop_timer(self, timer:QtCore.QTimer):
         timer.stop()
+
+    def set_callback_change_slider(self, slider:QSlider, set_callback):
+        slider.valueChanged.connect(set_callback)
+
+    def set_callback_range_slider(self, slider:QSlider, min_value:int, max_value:int):
+        slider.setMinimum(min_value)
+        slider.setMaximum(max_value)
+
+    def set_slider_value(self, slider:QSlider, value:int):
+        slider.setValue(value)
 
     
