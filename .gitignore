@@ -1,0 +1,6 @@
+myenv/
+model/__pycache__/
+view/__pycache__/
+controler/__pycache__/
+*.pyc
+results/
