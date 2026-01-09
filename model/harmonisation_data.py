@@ -47,6 +47,7 @@ class JsonHarmonisationData(HarmonisationData) :
         self.cube_position_y = None
         self.miror_position_x = None
         self.miror_position_y = None
+        self.distance_cube_miror_in_px = None
     
     def write(self, key:str, value:str):
         self.data_dict[key] = value
