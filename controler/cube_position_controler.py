@@ -109,8 +109,6 @@ class CubePositionControler(metaclass=SingletonMeta):
    
     def next_button_action(self):
             if len(self.instruction_text) == 0:
-                cam = get_active_camera()
-                cam.disconnect()
                 self.miror_position_controler = MirorPositionControler()
                 QWidget.close(self.camera_window)
                 self.camera_window.stop_timer(self.camera_window.timer)
