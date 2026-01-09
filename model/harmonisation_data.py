@@ -37,12 +37,16 @@ class JsonHarmonisationData(HarmonisationData) :
     def __init__(self):
         self.keys_data_list = ["SOFT_VERSION","SN", "OPERATOR_NAME", "DATE",
                                "CUBE_POSITION_X",
-                               "CUBE_POSITION_Y"]
+                               "CUBE_POSITION_Y",
+                               "MIROR_POSITION_X",
+                               "MIROR_POSITION_Y"]
         
         self.data_dict = {key: None for key in self.keys_data_list}
         self.sn = ""
         self.cube_position_x = None
         self.cube_position_y = None
+        self.miror_position_x = None
+        self.miror_position_y = None
     
     def write(self, key:str, value:str):
         self.data_dict[key] = value
