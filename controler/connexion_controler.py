@@ -98,6 +98,7 @@ class ConnexionControler(metaclass=SingletonMeta):
             data.save()
             self.cube_position_controler = CubePositionControler()
             QWidget.close(self.connexion_window)
+            self.connexion_window.stop_timer(self.connexion_window.timer)
         else:
             self.connexion_window.log_text = "Veuillez compléter toutes les étapes avant de continuer"
 
