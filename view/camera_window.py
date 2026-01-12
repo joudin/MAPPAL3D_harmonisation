@@ -6,10 +6,10 @@ Created on Fri Apr  5 10:16:06 2024
 """
 
 
-from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QSlider, QHBoxLayout, QLineEdit
+from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QSlider, QHBoxLayout, QLineEdit, QCheckBox
 from PyQt5.QtGui import QFont, QImage, QPixmap
 from PyQt5 import QtCore
-from view.widget_state import ButtonNok, LineEditNok
+from view.widget_state import ButtonNok, LineEditNoEmphasis, CheckBoxNoEmphasis
 from model.data_supplements import VERSION
 from model.camera import get_active_camera
 from view.mpl_canvas import MplCanvas
@@ -148,10 +148,14 @@ class CameraWindowExtended(CameraWindow):
         self.layout_h1.addStretch()
 
         self.extra_label = QLabel("")
-        self.extra_text_field = QLineEdit()
+        self.extra_lineEdit = QLineEdit()
+        self.extra_checkbox = QCheckBox('Cale pelable définitive')
+        self.extra_checkbox.setChecked(False)
         self.extra_layout_h.addWidget(self.extra_label)
-        self.extra_layout_h.addWidget(self.extra_text_field)
+        self.extra_layout_h.addWidget(self.extra_lineEdit)
+        self.extra_layout_h.addWidget(self.extra_checkbox)
 
         # Liste des widgets necessitant un suivi de leur etat
-        self.lineEdit_state = LineEditNok(self.extra_text_field)
+        self.lineEdit_state = LineEditNoEmphasis(self.extra_lineEdit)
+        self.extra_checkbox_state = CheckBoxNoEmphasis(self.extra_checkbox)
 

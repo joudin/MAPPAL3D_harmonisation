@@ -41,7 +41,8 @@ class JsonHarmonisationData(HarmonisationData) :
                                "MIROR_POSITION_X",
                                "MIROR_POSITION_Y",
                                "DISTANCE_CUBE_MIROR_IN_PX",
-                               "DIVERGENCE_IN_MRAD",]
+                               "DIVERGENCE_IN_MRAD",
+                               "WEDGE_WIDTH_IN_MM"]
         
         self.data_dict = {key: None for key in self.keys_data_list}
         self.sn = ""
@@ -53,7 +54,7 @@ class JsonHarmonisationData(HarmonisationData) :
         self.divergence_in_mrad = None
         self.wedge_width_list_in_mm = []
         self.divergence_list_in_mrad = []
-
+        self.final_wedge_width_in_mm = None
     
     def write(self, key:str, value:str):
         self.data_dict[key] = value
