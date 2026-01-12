@@ -6,12 +6,13 @@ Created on Fri Apr  5 10:16:06 2024
 """
 
 
-from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QSlider, QHBoxLayout
+from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QSlider, QHBoxLayout, QLineEdit
 from PyQt5.QtGui import QFont, QImage, QPixmap
 from PyQt5 import QtCore
-from view.widget_state import ButtonNok
+from view.widget_state import ButtonNok, LineEditNok
 from model.data_supplements import VERSION
 from model.camera import get_active_camera
+from view.mpl_canvas import MplCanvas
 
 class CameraWindow(QWidget):
     def __init__(self):
@@ -61,34 +62,42 @@ class CameraWindow(QWidget):
         self.button_exit = QPushButton("Exit", self)
         
         # Mise en forme de la GUI
-        main_layout_v = QVBoxLayout()
+        self.main_layout_v = QVBoxLayout()
 
-        main_layout_v.addWidget(self.instruction_label_title)
-        main_layout_v.addWidget(self.instruction_label)
-        main_layout_v.addWidget(self.image_label)
+        self.main_layout_v.addWidget(self.instruction_label_title)
+        self.main_layout_v.addWidget(self.instruction_label)
+        self.layout_h1 = QHBoxLayout()
+        self.layout_h1.addStretch()
+        self.layout_h1.addWidget(self.image_label)
+        self.layout_h1.addStretch()
+        # Reste une place sur layout_h1 pour ajouter un graphique si besoin
+        self.main_layout_v.addLayout(self.layout_h1)
+
         if get_active_camera().__class__.__name__ == "SimulationCamera":
-            slider_layout_h_1 = QHBoxLayout()
-            slider_layout_h_1.addWidget(self.slider_x_centroid_label)
-            slider_layout_h_1.addWidget(self.slider_x_centroid)
-            main_layout_v.addLayout(slider_layout_h_1)
+            self.slider_layout_h_1 = QHBoxLayout()
+            self.slider_layout_h_1.addWidget(self.slider_x_centroid_label)
+            self.slider_layout_h_1.addWidget(self.slider_x_centroid)
+            self.main_layout_v.addLayout(self.slider_layout_h_1)
 
-            slider_layout_h_2 = QHBoxLayout()
-            slider_layout_h_2.addWidget(self.slider_y_centroid_label)
-            slider_layout_h_2.addWidget(self.slider_y_centroid)
-            main_layout_v.addLayout(slider_layout_h_2)
+            self.slider_layout_h_2 = QHBoxLayout()
+            self.slider_layout_h_2.addWidget(self.slider_y_centroid_label)
+            self.slider_layout_h_2.addWidget(self.slider_y_centroid)
+            self.main_layout_v.addLayout(self.slider_layout_h_2)
 
-            slider_layout_h_3 = QHBoxLayout()
-            slider_layout_h_3.addWidget(self.slider_width_label)
-            slider_layout_h_3.addWidget(self.slider_width)
-            main_layout_v.addLayout(slider_layout_h_3)
+            self.slider_layout_h_3 = QHBoxLayout()
+            self.slider_layout_h_3.addWidget(self.slider_width_label)
+            self.slider_layout_h_3.addWidget(self.slider_width)
+            self.main_layout_v.addLayout(self.slider_layout_h_3)
 
-        main_layout_v.addWidget(self.button_action)
-        main_layout_v.addWidget(self.button_next)
-        main_layout_v.addWidget(self.button_exit)
-        main_layout_v.addWidget(self.log_label)
-        
-        self.setLayout(main_layout_v)
+        self.extra_layout_h = QHBoxLayout()
+        self.main_layout_v.addLayout(self.extra_layout_h)
 
+        self.main_layout_v.addWidget(self.button_action)
+        self.main_layout_v.addWidget(self.button_next)
+        self.main_layout_v.addWidget(self.button_exit)
+        self.main_layout_v.addWidget(self.log_label)
+
+        self.setLayout(self.main_layout_v)
         # Liste des widgets necessitant un suivi de leur etat
         self.button_action_state = ButtonNok(self.button_action)
 
@@ -118,4 +127,31 @@ class CameraWindow(QWidget):
 
     def set_button_label(self, button:QPushButton, label:str):
         button.setText(label)
+
+    def set_label_text(self, label:QLabel, text:str):
+        label.setText(text)
+
+    def add_extra_widget(self):
+        pass
+
     
+class CameraWindowExtended(CameraWindow):
+    def __init__(self):
+        super().__init__()
+        self.add_extra_widget()
+        self.setGeometry(100, 100, 900, 700)
+    
+    def add_extra_widget(self):
+        # Widget to plot scatter plot
+        self.canvas = MplCanvas(self, width=100, height=50, dpi=100)
+        self.layout_h1.addWidget(self.canvas)
+        self.layout_h1.addStretch()
+
+        self.extra_label = QLabel("")
+        self.extra_text_field = QLineEdit()
+        self.extra_layout_h.addWidget(self.extra_label)
+        self.extra_layout_h.addWidget(self.extra_text_field)
+
+        # Liste des widgets necessitant un suivi de leur etat
+        self.lineEdit_state = LineEditNok(self.extra_text_field)
+
