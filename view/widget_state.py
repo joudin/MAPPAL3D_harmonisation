@@ -84,3 +84,31 @@ class LineEditNoEmphasis(LineEditState):
 
     def change_color(self):
         self.line.setStyleSheet((""))
+
+class CheckBoxState():
+    def __init__(self, checkbox):
+        self.checkbox = checkbox
+
+    def change_color(self):
+        pass
+
+class CheckBoxOk(CheckBoxState):
+    def __init__(self,checkbox):
+        super().__init__(checkbox=checkbox)
+
+    def change_color(self):
+        self.checkbox.setStyleSheet("QCheckBox { background-color: green; }")
+
+class CheckBoxNok(CheckBoxState):
+    def __init__(self,checkbox):
+        super().__init__(checkbox=checkbox)
+
+    def change_color(self):
+        self.checkbox.setStyleSheet("QCheckBox { background-color: red; }")
+
+class CheckBoxNoEmphasis(CheckBoxState):
+    def __init__(self,checkbox):
+        super().__init__(checkbox=checkbox)
+
+    def change_color(self):
+        self.checkbox.setStyleSheet("")
