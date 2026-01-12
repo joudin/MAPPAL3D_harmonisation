@@ -51,6 +51,8 @@ class JsonHarmonisationData(HarmonisationData) :
         self.miror_position_y = None
         self.distance_cube_miror_in_px = None
         self.divergence_in_mrad = None
+        self.wedge_width_list_in_mm = []
+        self.divergence_list_in_mrad = []
 
     
     def write(self, key:str, value:str):

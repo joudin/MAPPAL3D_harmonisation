@@ -1,13 +1,13 @@
 
 from turtle import color
-from view.widget_state import ButtonOk, ButtonNok
+from view.widget_state import LineEditNok, LineEditNoEmphasis, ButtonNoEmphasis
 from PyQt5.QtWidgets import QApplication, QWidget
-from PyQt5.QtGui import QImage, QPixmap, QPainter, QPen, QColor
+from PyQt5.QtGui import QImage, QPixmap
 from tools.singleton import SingletonMeta
 from model.data_supplements import XDIM, YDIM, DIVERGENCE_THRESHOLD_IN_MRAD, FOCAL_LENGTH, PIXEL_SIZE
 from model.camera import  get_active_camera
 from model.harmonisation_data import get_active_harmonisation_data
-from view.camera_window import CameraWindow
+from view.camera_window import CameraWindowExtended
 import cv2
 from model.calculations import get_gauss_fit_params, get_gaussian_divergence_and_diameter
 import threading
@@ -18,7 +18,7 @@ DELAY = 200
 class DivergenceControler(metaclass=SingletonMeta):
     def __init__(self):       
         # Comportement de la GUI
-        self.camera_window = CameraWindow()
+        self.camera_window = CameraWindowExtended()
         self.camera_window.show()
         self.camera_window.set_callback_timer(self.camera_window.timer, self.update_gui)
         self.camera_window.set_timer_timeout(self.camera_window.timer, DELAY)
@@ -26,6 +26,7 @@ class DivergenceControler(metaclass=SingletonMeta):
         self.camera_window.set_button_label(self.camera_window.button_action, 'Enregistrer Divergence')
         self.camera_window.set_callback_connect_button(self.camera_window.button_next, self.next_button_action)
         self.camera_window.set_callback_connect_button(self.camera_window.button_exit, self.exit_application_action)
+        self.camera_window.set_label_text(self.camera_window.extra_label, "Epaisseur cale pelable (mm):")
         if get_active_camera().__class__.__name__ == "SimulationCamera":
             self.camera_window.set_callback_change_slider(self.camera_window.slider_x_centroid, self.x_centroid_change_slider_action)
             self.camera_window.set_callback_change_slider(self.camera_window.slider_y_centroid, self.y_centroid_change_slider_action)
@@ -36,19 +37,17 @@ class DivergenceControler(metaclass=SingletonMeta):
             self.camera_window.set_slider_value(self.camera_window.slider_x_centroid, int(XDIM/2))
             self.camera_window.set_slider_value(self.camera_window.slider_y_centroid, int(YDIM/2))
             self.camera_window.set_slider_value(self.camera_window.slider_width, int(XDIM/10))
+        self.camera_window.button_action_state = ButtonNoEmphasis(self.camera_window.button_action)
+        self.camera_window.lineEdit_state = LineEditNoEmphasis(self.camera_window.extra_text_field)
 
 ############################ Callbacks #######################################
 
     def build_instructions_text(self):
-        self.instruction_text = ""
-        if type(self.camera_window.button_action_state) == ButtonOk:
-            pass
-        else:
-            self.instruction_text += "Enregistrer la divergence"
+        self.instruction_text = "Pour plusieurs épaisseurs de cale pelable, mesurer la divergence jusqu'à observer un minimum"
         
     def update_gui(self):
         # Mise à jour de la GUI en se basant sur les états des widgets
-        self.camera_window.button_action_state.change_color()
+        self.camera_window.lineEdit_state.change_color()
 
         self.np_image = get_active_camera().snapshot() 
         # On met à jour l'image de la camera
@@ -59,6 +58,20 @@ class DivergenceControler(metaclass=SingletonMeta):
         self.qimage = QImage(colored_image.data, width, height, bytes_per_line * 3, QImage.Format_RGB888)
         pixmap = QPixmap.fromImage(self.qimage)
         self.camera_window.image_label.setPixmap(pixmap)
+
+        # On met à jour le scatter plot
+        data = get_active_harmonisation_data()
+        try:
+            if  len(data.wedge_width_list_in_mm) == len(data.divergence_list_in_mrad) and len(data.divergence_list_in_mrad) != 0:
+                self.camera_window.canvas.axes.cla()
+                self.camera_window.canvas.axes.scatter(data.wedge_width_list_in_mm, data.divergence_list_in_mrad)
+                self.camera_window.canvas.axes.plot([min(data.wedge_width_list_in_mm)-0.1,max(data.wedge_width_list_in_mm)+0.1],[DIVERGENCE_THRESHOLD_IN_MRAD,DIVERGENCE_THRESHOLD_IN_MRAD],color='red')
+                self.camera_window.canvas.axes.set_xlabel("Epaisseur cale pelable (mm)")
+                self.camera_window.canvas.axes.set_ylabel("divergence (mrad)")
+                self.camera_window.canvas.axes.set_title("Divergence en fonction de l'épaisseur de cale pelable")
+                self.camera_window.canvas.draw()
+        except:
+            print("X et Y n'ont pas les memes dimentions")
 
         # On construit le texte donnant les instructions restantes en fonction de l'état des widgets
         self.build_instructions_text()
@@ -89,27 +102,47 @@ class DivergenceControler(metaclass=SingletonMeta):
 
     def divergence_action(self):
         """
-        faire un fit gaussien de l'image pour déterminer la divergence
-        enregistrer la divergence dans les data supplements
-        enregistrer l'image
+        Vérifier que le textField est rempli et valide
+        Faire un fit gaussien de l'image pour déterminer la divergence
+        Enregistrer la divergence dans les data supplements
+        Enregistrer l'image
+        Mettre à jour les listes pour le scatter plot
         Mettre à jour le log
-        Mettre à jour l'état du bouton
-        """
-        params = get_gauss_fit_params(self.np_image)
-        data = get_active_harmonisation_data()
-        dict_results = get_gaussian_divergence_and_diameter(params, FOCAL_LENGTH, PIXEL_SIZE)
-        data.divergence_in_mrad = dict_results['divergence']*1000  # conversion en mrad
-        data.write("DIVERGENCE_IN_MRAD", str(data.divergence_in_mrad))
-        data.save()
-        self.qimage.save(f'results/{data.sn}/{data.read("SN")}_DIVERGENCE.png', 'PNG')
-       
-        if data.divergence_in_mrad <= DIVERGENCE_THRESHOLD_IN_MRAD:
-            self.camera_window.button_action_state = ButtonOk(self.camera_window.button_action)
-            self.camera_window.log_text = f'Divergence enregistrée :={data.divergence_in_mrad:.2f}\n (OK max ={DIVERGENCE_THRESHOLD_IN_MRAD} mrad)'
-        else:
-            self.camera_window.button_action_state = ButtonNok(self.camera_window.button_action)
-            self.camera_window.log_text = f'Divergence enregistrée :={data.divergence_in_mrad:.2f}\n (NOK max ={DIVERGENCE_THRESHOLD_IN_MRAD} mrad)'
     
+        """
+        if self.camera_window.extra_text_field.text() != "":
+            # On vérifie que la valeur numérique entrée est correcte
+            try:
+                wedge_width_in_mm = float(self.camera_window.extra_text_field.text())
+            except:
+                self.camera_window.log_text = "Valeur d'épaisseur de cale pelable invalide."
+                return
+            # On met à jour l'état du champ de texte
+            self.camera_window.lineEdit_state = LineEditNoEmphasis(self.camera_window.extra_text_field)
+            # On calcule la divergence et on enregistre les résultats
+            params = get_gauss_fit_params(self.np_image)
+            data = get_active_harmonisation_data()
+            dict_results = get_gaussian_divergence_and_diameter(params, FOCAL_LENGTH, PIXEL_SIZE)
+            data.divergence_in_mrad = dict_results['divergence']*1000  # conversion en mrad
+            data.write("DIVERGENCE_IN_MRAD", str(data.divergence_in_mrad))
+            data.save()
+            self.qimage.save(f'results/{data.sn}/{data.read("SN")}_DIVERGENCE.png', 'PNG')
+            
+            # On ajoute les valeurs dans les listes pour tracer le scatter plot
+            data.wedge_width_list_in_mm.append(wedge_width_in_mm)
+            data.divergence_list_in_mrad.append(data.divergence_in_mrad)
+
+            if data.divergence_in_mrad <= DIVERGENCE_THRESHOLD_IN_MRAD:
+                self.camera_window.log_text = f'Divergence enregistrée : {data.divergence_in_mrad:.2f}\n (OK max ={DIVERGENCE_THRESHOLD_IN_MRAD} mrad)'
+            else:
+                self.camera_window.log_text = f'Divergence enregistrée : {data.divergence_in_mrad:.2f}\n (NOK max ={DIVERGENCE_THRESHOLD_IN_MRAD} mrad)'
+            
+            # On vide le champ de texte
+            self.camera_window.extra_text_field.clear()
+        else:
+            self.camera_window.lineEdit_state = LineEditNok(self.camera_window.extra_text_field)
+            self.camera_window.log_text = "Veuillez entrer une valeur pour l'épaisseur de la cale pelable."
+
     def next_button_action(self):
             if len(self.instruction_text) == 0:
                 cam = get_active_camera()
