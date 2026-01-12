@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import  QPushButton, QComboBox
+from PyQt5.QtWidgets import  QPushButton, QComboBox, QLineEdit
 from PyQt5.QtGui import QFont
 
 class ComboBoxState():
@@ -22,6 +22,12 @@ class ComboBoxNok(ComboBoxState):
     def change_color(self):
         self.comboBox.setStyleSheet("QComboBox { background-color: red; }")
 
+class ComboBoxNoEmphasis(ComboBoxState):
+    def __init__(self,comboBox:QComboBox):
+        super().__init__(comboBox=comboBox)
+
+    def change_color(self):
+        self.comboBox.setStyleSheet("")
 
 class ButtonState():
     def __init__(self, button:QPushButton):
@@ -43,3 +49,38 @@ class ButtonNok(ButtonState):
 
     def change_color(self):
         self.button.setStyleSheet(("background-color: red;"))
+
+class ButtonNoEmphasis(ButtonState):
+    def __init__(self,button:QPushButton):
+        super().__init__(button=button)
+
+    def change_color(self):
+        self.button.setStyleSheet((""))
+
+class LineEditState():
+    def __init__(self, line:QLineEdit):
+        self.line = line
+
+    def change_color(self):
+        pass
+
+class LineEditOK(LineEditState):
+    def __init__(self,line:QLineEdit):
+        super().__init__(line=line)
+
+    def change_color(self):
+        self.line.setStyleSheet(("background-color: green;"))
+
+class LineEditNok(LineEditState):
+    def __init__(self,line:QLineEdit):
+        super().__init__(line=line)
+
+    def change_color(self):
+        self.line.setStyleSheet(("background-color: red;"))
+
+class LineEditNoEmphasis(LineEditState):
+    def __init__(self,line:QLineEdit):
+        super().__init__(line=line)
+
+    def change_color(self):
+        self.line.setStyleSheet((""))
