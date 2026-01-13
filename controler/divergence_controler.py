@@ -7,7 +7,7 @@ from tools.singleton import SingletonMeta
 from model.data_supplements import XDIM, YDIM, DIVERGENCE_THRESHOLD_IN_MRAD, FOCAL_LENGTH, PIXEL_SIZE
 from model.camera import  get_active_camera
 from model.harmonisation_data import get_active_harmonisation_data
-from view.camera_window import CameraWindowExtended
+from view.camera_window import CameraWindowExtendedDivergence
 from controler.pointing_error_controler import PointingErrorControler
 import cv2
 from model.calculations import get_gauss_fit_params, get_gaussian_divergence_and_diameter
@@ -18,7 +18,7 @@ DELAY = 200
 class DivergenceControler(metaclass=SingletonMeta):
     def __init__(self):       
         # Comportement de la GUI
-        self.camera_window = CameraWindowExtended()
+        self.camera_window = CameraWindowExtendedDivergence()
         self.camera_window.show()
         self.camera_window.set_callback_timer(self.camera_window.timer, self.update_gui)
         self.camera_window.set_timer_timeout(self.camera_window.timer, DELAY)
@@ -43,7 +43,7 @@ class DivergenceControler(metaclass=SingletonMeta):
 
     def build_instructions_text(self):
         self.instruction_text = ""
-        if get_active_harmonisation_data().final_wedge_width_in_mm is None:
+        if get_active_harmonisation_data().emission_final_wedge_width_in_mm is None:
             self.instruction_text = "Pour plusieurs épaisseurs de cale pelable, mesurer la divergence jusqu'à observer un minimum.\nPuis enregistrer la divergence finale avec l'épaisseur de cale pelable définitive."
         
     def update_gui(self):
@@ -66,8 +66,8 @@ class DivergenceControler(metaclass=SingletonMeta):
             if  len(data.wedge_width_list_in_mm) == len(data.divergence_list_in_mrad) and len(data.divergence_list_in_mrad) != 0:
                 self.camera_window.canvas.axes.cla()
                 self.camera_window.canvas.axes.scatter(data.wedge_width_list_in_mm, data.divergence_list_in_mrad)
-                if data.final_wedge_width_in_mm is not None:
-                    self.camera_window.canvas.axes.scatter(data.final_wedge_width_in_mm, data.divergence_list_in_mrad[-1], color='green', s=100, label='Cale pelable définitive')
+                if data.emission_final_wedge_width_in_mm is not None:
+                    self.camera_window.canvas.axes.scatter(data.emission_final_wedge_width_in_mm, data.divergence_list_in_mrad[-1], color='green', s=100, label='Cale pelable définitive')
                 self.camera_window.canvas.axes.plot([min(data.wedge_width_list_in_mm)-0.1,max(data.wedge_width_list_in_mm)+0.1],[DIVERGENCE_THRESHOLD_IN_MRAD,DIVERGENCE_THRESHOLD_IN_MRAD],color='red', label='Seuil de divergence')
                 self.camera_window.canvas.axes.set_xlabel("Epaisseur cale pelable (mm)")
                 self.camera_window.canvas.axes.set_ylabel("divergence (mrad)")
@@ -107,7 +107,7 @@ class DivergenceControler(metaclass=SingletonMeta):
         """
         Vérifier que le textField est rempli et valide
         Faire un fit gaussien de l'image pour déterminer la divergence
-        Enregistrer la divergence dans les data supplements
+        Enregistrer la divergence dans le json
         Enregistrer l'image
         Mettre à jour les listes pour le scatter plot
         Mettre à jour le log
@@ -118,6 +118,7 @@ class DivergenceControler(metaclass=SingletonMeta):
             try:
                 wedge_width_in_mm = float(self.camera_window.extra_lineEdit.text())
             except:
+                self.camera_window.lineEdit_state = LineEditNok(self.camera_window.extra_lineEdit)
                 self.camera_window.log_text = "Valeur d'épaisseur de cale pelable invalide."
                 return
             # On met à jour l'état du champ de texte
@@ -129,8 +130,8 @@ class DivergenceControler(metaclass=SingletonMeta):
             data.divergence_in_mrad = dict_results['divergence']*1000  # conversion en mrad
             data.write("DIVERGENCE_IN_MRAD", str(data.divergence_in_mrad))
             if self.camera_window.extra_checkbox.isChecked():
-                data.final_wedge_width_in_mm = wedge_width_in_mm
-                data.write("WEDGE_WIDTH_IN_MM", str(wedge_width_in_mm))
+                data.emission_final_wedge_width_in_mm = wedge_width_in_mm
+                data.write("EMISSION_WEDGE_WIDTH_IN_MM", str(wedge_width_in_mm))
             data.save()
             self.qimage.save(f'{data.working_dir}/{data.read("SN")}_DIVERGENCE.png', 'PNG')
             

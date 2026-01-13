@@ -135,13 +135,13 @@ class CameraWindow(QWidget):
         pass
 
     
-class CameraWindowExtended(CameraWindow):
+class CameraWindowExtendedDivergence(CameraWindow):
     def __init__(self):
         super().__init__()
-        self.add_extra_widget()
+        self.add_extra_widget_divergence()
         self.setGeometry(100, 100, 900, 700)
     
-    def add_extra_widget(self):
+    def add_extra_widget_divergence(self):
         # Widget to plot scatter plot
         self.canvas = MplCanvas(self, width=100, height=50, dpi=100)
         self.layout_h1.addWidget(self.canvas)
@@ -158,4 +158,19 @@ class CameraWindowExtended(CameraWindow):
         # Liste des widgets necessitant un suivi de leur etat
         self.lineEdit_state = LineEditNoEmphasis(self.extra_lineEdit)
         self.extra_checkbox_state = CheckBoxNoEmphasis(self.extra_checkbox)
+
+class CameraWindowExtendedFocusApd(CameraWindow):
+    def __init__(self):
+        super().__init__()
+        self.add_extra_widget_focus_apd()
+
+    def add_extra_widget_focus_apd(self):
+        self.extra_label = QLabel("")
+        self.extra_lineEdit = QLineEdit()
+        self.extra_checkbox = QCheckBox('Cale pelable définitive')
+        self.extra_layout_h.addWidget(self.extra_label)
+        self.extra_layout_h.addWidget(self.extra_lineEdit)
+
+        # Liste des widgets necessitant un suivi de leur etat
+        self.lineEdit_state = LineEditNoEmphasis(self.extra_lineEdit)
 
