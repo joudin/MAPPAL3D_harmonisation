@@ -74,7 +74,7 @@ def create_camera(camera_type: str, camera_sn: str) -> Camera:
     if camera_type == "Simu":
         camera = SimulationCamera(camera_type, camera_sn)
         _set_active_camera(camera)
-        print("SIMU camera recognized")
+        print("Camera simu recognized")
         return camera
     else:
         print("Camera not recognized")
