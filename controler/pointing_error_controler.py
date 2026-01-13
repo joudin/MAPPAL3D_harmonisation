@@ -9,7 +9,7 @@ from model.camera import  get_active_camera
 from model.harmonisation_data import get_active_harmonisation_data
 from view.camera_window import CameraWindow
 import cv2
-from model.calculations import get_gauss_fit_params, get_euclidian_distance
+from model.calculations import get_gauss_fit_params, get_euclidian_distance, get_substracted_image
 import threading
 import numpy as np
 
@@ -49,13 +49,8 @@ class PointingErrorControler(metaclass=SingletonMeta):
         self.camera_window.button_action_state.change_color()
 
          # On met à jour le tableau image en soustrayant le background
-        self.np_image = get_active_camera().snapshot()
-        for i in range(YDIM):
-            for j in range(XDIM):
-                if self.np_image[i,j] < get_active_harmonisation_data().background_image[i,j]:
-                    self.np_image[i,j] = 0
-                else:
-                    self.np_image[i,j] = self.np_image[i,j] - get_active_harmonisation_data().background_image[i,j] 
+        self.raw_image = get_active_camera().snapshot()
+        self.np_image = get_substracted_image(self.raw_image, get_active_harmonisation_data().background_image)
         # On met à jour l'image de la camera
         colored_image = cv2.applyColorMap(self.np_image, cv2.COLORMAP_TURBO)
         height, width = self.np_image.shape

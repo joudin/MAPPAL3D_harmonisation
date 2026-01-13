@@ -131,3 +131,15 @@ def get_center_position(position_1:tuple(), position_2:tuple()) -> dict:
     y_center_position = (position_1[1] + position_2[1]) * 0.5 
     data = {'x_value' : x_center_position, 'y_value' : y_center_position}
     return data
+
+def get_substracted_image(image:np.array(float), background_image:np.array(float)) -> np.array(float):
+    shape = image.shape
+    substracted_image = np.zeros(shape, dtype=np.uint8)
+    for i in range(shape[0]):
+        for j in range(shape[1]):
+            if image[i,j] < background_image[i,j]:
+                substracted_image[i,j] = 0
+            else:
+                substracted_image[i,j] = image[i,j] - background_image[i,j]
+   
+    return substracted_image
