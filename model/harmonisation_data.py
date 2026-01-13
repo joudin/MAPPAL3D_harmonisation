@@ -49,13 +49,14 @@ class JsonHarmonisationData(HarmonisationData) :
                                "DISTANCE_CUBE_MIROR_IN_PX_EMISSION",
                                "DISTANCE_CUBE_MIROR_IN_PX_RECEPTION",
                                "DIVERGENCE_IN_MRAD",
-                               "WEDGE_WIDTH_IN_MM",
+                               "EMISSION_WEDGE_WIDTH_IN_MM",
                                "LASER_POSITION_X_EMISSION",
                                "LASER_POSITION_Y_EMISSION",
                                "DISTANCE_CUBE_LASER_IN_PX_EMISSION",
                                "LASER_POSITION_X_RECEPTION",
                                "LASER_POSITION_Y_RECEPTION",
-                               "DISTANCE_CUBE_LASER_IN_PX_RECEPTION"]
+                               "DISTANCE_CUBE_LASER_IN_PX_RECEPTION",
+                               "RECEPTION_WEDGE_WIDTH_IN_MM"]
 
         self.data_dict = {key: None for key in self.keys_data_list}
         self.sn = ""
@@ -67,11 +68,12 @@ class JsonHarmonisationData(HarmonisationData) :
         self.divergence_in_mrad = None
         self.wedge_width_list_in_mm = []
         self.divergence_list_in_mrad = []
-        self.final_wedge_width_in_mm = None
+        self.emission_final_wedge_width_in_mm = None
         self.laser_position_x = None
         self.laser_position_y = None
         self.distance_cube_laser_in_px = None
         self.step = None
+        self.recetion_final_wedge_width_in_mm = None
     
     def write(self, key:str, value:str):
         self.data_dict[key] = value
