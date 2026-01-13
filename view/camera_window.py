@@ -180,3 +180,15 @@ class CameraWindowExtendedFocusApd(CameraWindow):
         # Liste des widgets necessitant un suivi de leur etat
         self.lineEdit_state = LineEditNoEmphasis(self.extra_lineEdit)
 
+class CameraWindowExtendedCenterEmission(CameraWindow):
+    def __init__(self):
+        super().__init__()
+        self.add_extra_widget_center_emission()
+
+    def add_extra_widget_center_emission(self):
+        # Bouton pour calculer la position du spot
+        self.button_action_extra = QPushButton('Background', self)
+        self.extra_layout_v.addWidget(self.button_action_extra)
+
+        # Liste des widgets necessitant un suivi de leur etat
+        self.button_action_extra_state = ButtonNoEmphasis(self.button_action_extra)
