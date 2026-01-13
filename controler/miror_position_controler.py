@@ -125,7 +125,7 @@ class MirorPositionControler(metaclass=SingletonMeta):
    
     def next_button_action(self):
             if len(self.instruction_text) == 0:
-                if get_active_harmonisation_data().step.upper() == "EMISSION":
+                if get_active_harmonisation_data().step.upper() == "RECEPTION":
                     self.connexion_controler = FocusApdControler()
                 else:
                     self.divergence_controler = DivergenceControler()
