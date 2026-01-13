@@ -98,7 +98,7 @@ class CenterEmissionControler(metaclass=SingletonMeta):
         self.camera_window.log_text = "Image de fond enregistrée."
 
     def run_save_postion_spot_laser_on_new_thread(self):
-        self.camera_window.log_text = "Enregistrer la position du spot laser en cours..."
+        self.camera_window.log_text = "Enregistrement de la position du spot laser en cours..."
         # On lance le calcul sur un autre thread pour ne pas bloquer la GUI
         action_thread = threading.Thread(target=self.position_spot_laser_action) 
         action_thread.start()
@@ -117,13 +117,13 @@ class CenterEmissionControler(metaclass=SingletonMeta):
         
         params = get_gauss_fit_params(self.np_image)
         data = get_active_harmonisation_data()
-        data.cube_position_x = params['x_center']
-        data.cube_position_y = params['y_center']
-        data.write(f"CUBE_POSITION_X_{data.step.upper()}", str(params['x_center']))
-        data.write(f"CUBE_POSITION_Y_{data.step.upper()}", str(params['y_center']))
+        data.laser_position_x = params['x_center']
+        data.laser_position_y = params['y_center']
+        data.write(f"LASER_POSITION_X_{data.step.upper()}", str(params['x_center']))
+        data.write(f"LASER_POSITION_Y_{data.step.upper()}", str(params['y_center']))
         data.save()
-        self.qimage.save(f'{data.working_dir}/{data.read("SN")}_CUBE_POSITION_{data.step}.png', 'PNG')
-        self.camera_window.log_text = f'Position du cube enregistrée : X={params["x_center"]:.2f}, Y={params["y_center"]:.2f}'
+        self.qimage.save(f'{data.working_dir}/{data.read("SN")}_LASER_POSITION_{data.step}.png', 'PNG')
+        self.camera_window.log_text = f'Position du laser enregistrée : X={params["x_center"]:.2f}, Y={params["y_center"]:.2f}'
         self.camera_window.button_action_state = ButtonOk(self.camera_window.button_action)
    
     def next_button_action(self):
