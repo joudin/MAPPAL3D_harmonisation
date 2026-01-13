@@ -24,7 +24,7 @@ class ConnexionControler(metaclass=SingletonMeta):
         self.connexion_window.set_items_comboBox(self.connexion_window.comboBox_sn, sn)
         self.connexion_window.set_callback_change_comboBox(self.connexion_window.comboBox_operator_name, self.operator_name_change_comboBox)
         self.connexion_window.set_callback_change_comboBox(self.connexion_window.comboBox_sn, self.sn_change_comboBox)
-        self.connexion_window.set_items_comboBox(self.connexion_window.comboBox_step, ["--","Emission", "Réception"])
+        self.connexion_window.set_items_comboBox(self.connexion_window.comboBox_step, ["--","Emission", "Reception"])
         self.connexion_window.set_callback_change_comboBox(self.connexion_window.comboBox_step, self.step_change_comboBox)
 ############################ Callbacks #######################################
 
