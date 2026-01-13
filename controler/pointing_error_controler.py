@@ -11,7 +11,7 @@ from view.camera_window import CameraWindow
 import cv2
 from model.calculations import get_gauss_fit_params, get_euclidian_distance
 import threading
-import time
+import numpy as np
 
 DELAY = 200
 
@@ -36,21 +36,26 @@ class PointingErrorControler(metaclass=SingletonMeta):
             self.camera_window.set_slider_value(self.camera_window.slider_x_centroid, int(XDIM/2))
             self.camera_window.set_slider_value(self.camera_window.slider_y_centroid, int(YDIM/2))
             self.camera_window.set_slider_value(self.camera_window.slider_width, int(XDIM/10))
-
+        
 ############################ Callbacks #######################################
 
     def build_instructions_text(self):
         self.instruction_text = ""
-        if type(self.camera_window.button_action_state) == ButtonOk:
-            pass
-        else:
+        if type(self.camera_window.button_action_state) == ButtonNok:
             self.instruction_text += "Enregistrer le dépointé de l'émission laser"
         
     def update_gui(self):
         # Mise à jour de la GUI en se basant sur les états des widgets
         self.camera_window.button_action_state.change_color()
 
-        self.np_image = get_active_camera().snapshot() 
+         # On met à jour le tableau image en soustrayant le background
+        self.np_image = get_active_camera().snapshot()
+        for i in range(YDIM):
+            for j in range(XDIM):
+                if self.np_image[i,j] < get_active_harmonisation_data().background_image[i,j]:
+                    self.np_image[i,j] = 0
+                else:
+                    self.np_image[i,j] = self.np_image[i,j] - get_active_harmonisation_data().background_image[i,j] 
         # On met à jour l'image de la camera
         colored_image = cv2.applyColorMap(self.np_image, cv2.COLORMAP_TURBO)
         height, width = self.np_image.shape
