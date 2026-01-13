@@ -8,10 +8,10 @@ from model.data_supplements import XDIM, YDIM, DIVERGENCE_THRESHOLD_IN_MRAD, FOC
 from model.camera import  get_active_camera
 from model.harmonisation_data import get_active_harmonisation_data
 from view.camera_window import CameraWindowExtended
+from controler.pointing_error_controler import PointingErrorControler
 import cv2
 from model.calculations import get_gauss_fit_params, get_gaussian_divergence_and_diameter
 import threading
-import time
 
 DELAY = 200
 
@@ -68,7 +68,7 @@ class DivergenceControler(metaclass=SingletonMeta):
                 self.camera_window.canvas.axes.scatter(data.wedge_width_list_in_mm, data.divergence_list_in_mrad)
                 if data.final_wedge_width_in_mm is not None:
                     self.camera_window.canvas.axes.scatter(data.final_wedge_width_in_mm, data.divergence_list_in_mrad[-1], color='green', s=100, label='Cale pelable définitive')
-                self.camera_window.canvas.axes.plot([min(data.wedge_width_list_in_mm)-0.1,max(data.wedge_width_list_in_mm)+0.1],[DIVERGENCE_THRESHOLD_IN_MRAD,DIVERGENCE_THRESHOLD_IN_MRAD],color='red')
+                self.camera_window.canvas.axes.plot([min(data.wedge_width_list_in_mm)-0.1,max(data.wedge_width_list_in_mm)+0.1],[DIVERGENCE_THRESHOLD_IN_MRAD,DIVERGENCE_THRESHOLD_IN_MRAD],color='red', label='Seuil de divergence')
                 self.camera_window.canvas.axes.set_xlabel("Epaisseur cale pelable (mm)")
                 self.camera_window.canvas.axes.set_ylabel("divergence (mrad)")
                 self.camera_window.canvas.axes.set_title("Divergence en fonction de l'épaisseur de cale pelable")
@@ -132,7 +132,7 @@ class DivergenceControler(metaclass=SingletonMeta):
                 data.final_wedge_width_in_mm = wedge_width_in_mm
                 data.write("WEDGE_WIDTH_IN_MM", str(wedge_width_in_mm))
             data.save()
-            self.qimage.save(f'results/{data.sn}/{data.read("SN")}_DIVERGENCE.png', 'PNG')
+            self.qimage.save(f'{data.working_dir}/{data.read("SN")}_DIVERGENCE.png', 'PNG')
             
             # On ajoute les valeurs dans les listes pour tracer le scatter plot
             data.wedge_width_list_in_mm.append(wedge_width_in_mm)
@@ -151,8 +151,7 @@ class DivergenceControler(metaclass=SingletonMeta):
 
     def next_button_action(self):
             if len(self.instruction_text) == 0:
-                cam = get_active_camera()
-                cam.disconnect()
+                self.divergence_controler = PointingErrorControler()
                 self.camera_window.close()
                 self.camera_window.stop_timer(self.camera_window.timer)
             else:
