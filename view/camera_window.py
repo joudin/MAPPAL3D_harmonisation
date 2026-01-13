@@ -9,7 +9,7 @@ Created on Fri Apr  5 10:16:06 2024
 from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QSlider, QHBoxLayout, QLineEdit, QCheckBox
 from PyQt5.QtGui import QFont, QImage, QPixmap
 from PyQt5 import QtCore
-from view.widget_state import ButtonNok, LineEditNoEmphasis, CheckBoxNoEmphasis
+from view.widget_state import ButtonNoEmphasis, ButtonNok, LineEditNoEmphasis, CheckBoxNoEmphasis
 from model.data_supplements import VERSION
 from model.camera import get_active_camera
 from view.mpl_canvas import MplCanvas
@@ -91,6 +91,8 @@ class CameraWindow(QWidget):
 
         self.extra_layout_h = QHBoxLayout()
         self.main_layout_v.addLayout(self.extra_layout_h)
+        self.extra_layout_v = QVBoxLayout()
+        self.main_layout_v.addLayout(self.extra_layout_v)
 
         self.main_layout_v.addWidget(self.button_action)
         self.main_layout_v.addWidget(self.button_next)
@@ -154,10 +156,14 @@ class CameraWindowExtendedDivergence(CameraWindow):
         self.extra_layout_h.addWidget(self.extra_label)
         self.extra_layout_h.addWidget(self.extra_lineEdit)
         self.extra_layout_h.addWidget(self.extra_checkbox)
+        # Bouton pour calculer la position du spot
+        self.button_action_extra = QPushButton('Background', self)
+        self.extra_layout_v.addWidget(self.button_action_extra)
 
         # Liste des widgets necessitant un suivi de leur etat
         self.lineEdit_state = LineEditNoEmphasis(self.extra_lineEdit)
         self.extra_checkbox_state = CheckBoxNoEmphasis(self.extra_checkbox)
+        self.button_action_extra_state = ButtonNoEmphasis(self.button_action_extra)
 
 class CameraWindowExtendedFocusApd(CameraWindow):
     def __init__(self):

@@ -1,6 +1,8 @@
 import json
 import os
 from tools.singleton import SingletonMeta
+from model.data_supplements import XDIM, YDIM
+import numpy as np
 
 # Active harmonisation data accessor (service) : stocke l'instance de données harmonisation créée
 _active_harmonisation_data = None
@@ -74,6 +76,7 @@ class JsonHarmonisationData(HarmonisationData) :
         self.distance_cube_laser_in_px = None
         self.step = None
         self.recetion_final_wedge_width_in_mm = None
+        self.background_image = np.zeros((YDIM,XDIM), dtype=np.uint8)  # Placeholder for background image
     
     def write(self, key:str, value:str):
         self.data_dict[key] = value

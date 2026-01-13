@@ -1,6 +1,8 @@
 
 from turtle import color
-from view.widget_state import LineEditNok, LineEditNoEmphasis, ButtonNoEmphasis, CheckBoxNoEmphasis, CheckBoxNok
+
+import numpy as np
+from view.widget_state import LineEditNok, LineEditNoEmphasis, ButtonNoEmphasis, CheckBoxNoEmphasis, ButtonNok
 from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtGui import QImage, QPixmap
 from tools.singleton import SingletonMeta
@@ -37,20 +39,33 @@ class DivergenceControler(metaclass=SingletonMeta):
             self.camera_window.set_slider_value(self.camera_window.slider_x_centroid, int(XDIM/2))
             self.camera_window.set_slider_value(self.camera_window.slider_y_centroid, int(YDIM/2))
             self.camera_window.set_slider_value(self.camera_window.slider_width, int(XDIM/10))
+        
         self.camera_window.button_action_state = ButtonNoEmphasis(self.camera_window.button_action)
-
+        self.camera_window.button_action_extra_state = ButtonNok(self.camera_window.button_action_extra)
+        self.camera_window.set_callback_connect_button(self.camera_window.button_action_extra, self.capture_background_action)
 ############################ Callbacks #######################################
 
     def build_instructions_text(self):
         self.instruction_text = ""
+        if type(self.camera_window.button_action_extra_state)== ButtonNok:
+            self.instruction_text += "Veuillez enregistrer une image de fond avant de continuer."
         if get_active_harmonisation_data().emission_final_wedge_width_in_mm is None:
-            self.instruction_text = "Pour plusieurs épaisseurs de cale pelable, mesurer la divergence jusqu'à observer un minimum.\nPuis enregistrer la divergence finale avec l'épaisseur de cale pelable définitive."
+            if len(self.instruction_text) > 0:
+                self.instruction_text += "\n"
+            self.instruction_text += "Pour plusieurs épaisseurs de cale pelable, mesurer la divergence jusqu'à observer un minimum.\nPuis enregistrer la divergence finale avec l'épaisseur de cale pelable définitive."
         
     def update_gui(self):
         # Mise à jour de la GUI en se basant sur les états des widgets
         self.camera_window.lineEdit_state.change_color()
-
-        self.np_image = get_active_camera().snapshot() 
+        self.camera_window.button_action_extra_state.change_color()
+        # On met à jour le tableau image en soustrayant le background
+        self.np_image = get_active_camera().snapshot()
+        for i in range(YDIM):
+            for j in range(XDIM):
+                if self.np_image[i,j] < get_active_harmonisation_data().background_image[i,j]:
+                    self.np_image[i,j] = 0
+                else:
+                    self.np_image[i,j] = self.np_image[i,j] - get_active_harmonisation_data().background_image[i,j]
         # On met à jour l'image de la camera
         colored_image = cv2.applyColorMap(self.np_image, cv2.COLORMAP_TURBO)
         height, width = self.np_image.shape
@@ -103,6 +118,16 @@ class DivergenceControler(metaclass=SingletonMeta):
         action_thread = threading.Thread(target=self.divergence_action) 
         action_thread.start()
 
+    def capture_background_action(self):
+        data = get_active_harmonisation_data()
+        data.background_image = np.zeros((YDIM,XDIM), dtype=np.uint8)  # Reset background image
+        self.np_image = get_active_camera().snapshot() 
+        # On enregistre l'image de fond dans les données
+        data.background_image = self.np_image.copy() # Ajouter à harmonistation data
+        self.qimage.save(f'{data.working_dir}/{data.read("SN")}_BACKGROUND.png', 'PNG')
+        self.camera_window.button_action_extra_state = ButtonNoEmphasis(self.camera_window.button_action_extra)
+        self.camera_window.log_text = "Image de fond enregistrée."
+
     def divergence_action(self):
         """
         Vérifier que le textField est rempli et valide
@@ -113,6 +138,10 @@ class DivergenceControler(metaclass=SingletonMeta):
         Mettre à jour le log
     
         """
+        if self.camera_window.button_action_extra_state.__class__.__name__ == "ButtonNok":
+            self.camera_window.log_text = "Veuillez d'abord enregistrer une image de fond avant de continuer."
+            return
+        
         if self.camera_window.extra_lineEdit.text() != "":
             # On vérifie que la valeur numérique entrée est correcte
             try:
