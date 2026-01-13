@@ -9,6 +9,7 @@ from model.camera import  get_active_camera
 from model.harmonisation_data import get_active_harmonisation_data
 from view.camera_window import CameraWindow
 from controler.divergence_controler import DivergenceControler
+from controler.focus_apd_controler import FocusApdControler
 import cv2
 from model.calculations import get_gauss_fit_params, get_euclidian_distance
 import threading
@@ -109,20 +110,25 @@ class MirorPositionControler(metaclass=SingletonMeta):
         data = get_active_harmonisation_data()
         data.miror_position_x = params['x_center']
         data.miror_position_y = params['y_center']
-        data.write("MIROR_POSITION_X", str(params['x_center']))
-        data.write("MIROR_POSITION_Y", str(params['y_center']))
+        data.write(f"MIROR_POSITION_X_{data.step.upper()}", str(params['x_center']))
+        data.write(f"MIROR_POSITION_Y_{data.step.upper()}", str(params['y_center']))
         data.save()
-        self.qimage.save(f'results/{data.sn}/{data.read("SN")}_MIROR_POSITION.png', 'PNG')
+        self.qimage.save(f'{data.working_dir}/{data.read("SN")}_MIROR_POSITION_{data.step.upper()}.png', 'PNG')
         data.distance_cube_miror_in_px = get_euclidian_distance((data.cube_position_x, data.cube_position_y), (data.miror_position_x, data.miror_position_y))['euclidian']
+        data.write(f"DISTANCE_CUBE_MIROR_IN_PX_{data.step.upper()}", str(data.distance_cube_miror_in_px))
         if data.distance_cube_miror_in_px <= EUCLIDIAN_DISTANCE_CUBE_MIROR_THRESHOLD_IN_PX:
             self.camera_window.button_action_state = ButtonOk(self.camera_window.button_action)
             self.camera_window.log_text = f'Position du miroir enregistrée : X={params["x_center"]:.2f}, Y={params["y_center"]:.2f}\nDistance cube-miroir = {data.distance_cube_miror_in_px:.2f} px (OK max ={EUCLIDIAN_DISTANCE_CUBE_MIROR_THRESHOLD_IN_PX} px)'
         else:
             self.camera_window.button_action_state = ButtonNok(self.camera_window.button_action)
             self.camera_window.log_text = f'Position du miroir enregistrée : X={params["x_center"]:.2f}, Y={params["y_center"]:.2f}\nDistance cube-miroir = {data.distance_cube_miror_in_px:.2f} px (NOK max ={EUCLIDIAN_DISTANCE_CUBE_MIROR_THRESHOLD_IN_PX} px)'
+   
     def next_button_action(self):
             if len(self.instruction_text) == 0:
-                self.divergence_controler = DivergenceControler()
+                if get_active_harmonisation_data().step.upper() == "EMISSION":
+                    self.connexion_controler = FocusApdControler()
+                else:
+                    self.divergence_controler = DivergenceControler()
                 QWidget.close(self.camera_window)
                 self.camera_window.stop_timer(self.camera_window.timer)
             else:

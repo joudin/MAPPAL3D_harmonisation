@@ -1,8 +1,6 @@
 import json
 import os
 from tools.singleton import SingletonMeta
-from model.data_supplements import VERSION
-
 
 # Active harmonisation data accessor (service) : stocke l'instance de données harmonisation créée
 _active_harmonisation_data = None
@@ -15,6 +13,10 @@ def _set_active_harmonisation_data(data):
     _active_harmonisation_data = data
 
 class HarmonisationData(metaclass=SingletonMeta):
+    def __init__(self):
+        self.fileName = ""
+        self.working_dir = ""
+
     def write(self, key:str, value:str):
         pass
 
@@ -35,15 +37,26 @@ class HarmonisationData(metaclass=SingletonMeta):
 
 class JsonHarmonisationData(HarmonisationData) :
     def __init__(self):
-        self.keys_data_list = ["SOFT_VERSION","SN", "OPERATOR_NAME", "DATE",
-                               "CUBE_POSITION_X",
-                               "CUBE_POSITION_Y",
-                               "MIROR_POSITION_X",
-                               "MIROR_POSITION_Y",
-                               "DISTANCE_CUBE_MIROR_IN_PX",
+        self.keys_data_list = ["SOFT_VERSION","SN", "OPERATOR_NAME", "DATE", "PIXEL_SIZE_IN_M", "FOCAL_LENGTH_IN_M",
+                               "CUBE_POSITION_X_EMISSION",
+                               "CUBE_POSITION_Y_EMISSION",
+                               "CUBE_POSITION_X_RECEPTION",
+                               "CUBE_POSITION_Y_RECEPTION",
+                               "MIROR_POSITION_X_EMISSION",
+                               "MIROR_POSITION_Y_EMISSION",
+                               "MIROR_POSITION_X_RECEPTION",
+                               "MIROR_POSITION_Y_RECEPTION",
+                               "DISTANCE_CUBE_MIROR_IN_PX_EMISSION",
+                               "DISTANCE_CUBE_MIROR_IN_PX_RECEPTION",
                                "DIVERGENCE_IN_MRAD",
-                               "WEDGE_WIDTH_IN_MM"]
-        
+                               "WEDGE_WIDTH_IN_MM",
+                               "LASER_POSITION_X_EMISSION",
+                               "LASER_POSITION_Y_EMISSION",
+                               "DISTANCE_CUBE_LASER_IN_PX_EMISSION",
+                               "LASER_POSITION_X_RECEPTION",
+                               "LASER_POSITION_Y_RECEPTION",
+                               "DISTANCE_CUBE_LASER_IN_PX_RECEPTION"]
+
         self.data_dict = {key: None for key in self.keys_data_list}
         self.sn = ""
         self.cube_position_x = None
@@ -55,6 +68,10 @@ class JsonHarmonisationData(HarmonisationData) :
         self.wedge_width_list_in_mm = []
         self.divergence_list_in_mrad = []
         self.final_wedge_width_in_mm = None
+        self.laser_position_x = None
+        self.laser_position_y = None
+        self.distance_cube_laser_in_px = None
+        self.step = None
     
     def write(self, key:str, value:str):
         self.data_dict[key] = value
@@ -64,15 +81,14 @@ class JsonHarmonisationData(HarmonisationData) :
 
     def save(self):
         if self.data_dict.get("SN") is not None:
-            fileName = f'results\\{self.sn}\\SN{self.data_dict["SN"]}.json'
-            with open(fileName, 'w') as fichier:
+            with open(self.fileName, 'w') as fichier:
                 json.dump(self.data_dict, fichier,indent=4)
 
     def load(self,sn:str):
-        fileName = f'SN{sn}.json'
-        if os.path.exists(fileName):
-            with open(fileName, 'r') as fileName:
-                self.data_dict = json.load(fileName)
+        self.fileName = f'SN{sn}.json'
+        if os.path.exists(self.fileName):
+            with open(self.fileName, 'r') as self.fileName:
+                self.data_dict = json.load(self.fileName)
 
     def append_new_field(self, key:str, value:str):
         self.data_dict = {key: value}
@@ -80,13 +96,23 @@ class JsonHarmonisationData(HarmonisationData) :
     def __str__(self):
         return str(self.data_dict)
 
-def create_harmonisation_data(type_dest:str,sn:str) -> HarmonisationData:
-    os.makedirs(f'results\\{sn}', exist_ok=True)
-    fileName = f'result\\{sn}\\SN{sn}.json'
+def create_harmonisation_data(type_dest:str,sn:str,step:str) -> HarmonisationData:
+    #TODO créer un dossier SN_v{i} pour y associer les resultats
+    os.makedirs(f'results\\{sn}\\{step}', exist_ok=True)
+    for i in range(1,100,1):
+        path = f'results\\{sn}\\{step}\\SN{sn}_v{i}'
+        if os.path.isdir(path):
+            continue
+        else:
+            os.makedirs(path, exist_ok=True)
+            break
+
     if type_dest.upper() == "JSON": 
         data = JsonHarmonisationData() 
-        if os.path.exists(fileName):
-            data.load(sn)
+        data.working_dir = path
+        data.fileName = f'{path}\\SN{sn}.json'
+        data.sn = sn
+        data.step = step
         _set_active_harmonisation_data(data)
         return data
     else:

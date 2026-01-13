@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QWidget, QPushButton,QVBoxLayout, QLabel, QHBoxLayou
 from PyQt5.QtGui import QFont
 from PyQt5 import QtCore
 from model.data_supplements import VERSION
-from view.widget_state import ButtonNok
+from view.widget_state import ButtonNok, ComboBoxNok
 
 class ConnexionWindow(QWidget):
     def __init__(self):
@@ -38,6 +38,11 @@ class ConnexionWindow(QWidget):
         self.label_connect_camera = QLabel("Connecter la caméra", self)
         self.button_connect_camera = QPushButton('Connexion',self)
 
+        # Widget Emission Reception
+        self.step_label = QLabel("Séléctionner l'étape", self)
+        self.comboBox_step = QComboBox(self)
+        self.value_comboBox_step = ""
+  
         # Bouton pour passer à la suite de la séquence de programmation
         self.next_button = QPushButton('Suivant', self)
 
@@ -66,6 +71,8 @@ class ConnexionWindow(QWidget):
         main_layout_v.addWidget(self.comboBox_operator_name)
         main_layout_v.addWidget(self.label_sn)
         main_layout_v.addWidget(self.comboBox_sn)
+        main_layout_v.addWidget(self.step_label)
+        main_layout_v.addWidget(self.comboBox_step)
 
         layout_h1 = QHBoxLayout()
         layout_h1.addWidget(self.label_connect_camera)
@@ -82,9 +89,10 @@ class ConnexionWindow(QWidget):
         self.setLayout(main_layout_v)
 
         # Liste des widgets necessitant un suivi de leur etat
-        self.comboBox_operator_name_state = ButtonNok(self.comboBox_operator_name)
-        self.comboBox_sn_state = ButtonNok(self.comboBox_sn)
+        self.comboBox_operator_name_state = ComboBoxNok(self.comboBox_operator_name)
+        self.comboBox_sn_state = ComboBoxNok(self.comboBox_sn)
         self.button_connect_camera_state = ButtonNok(self.button_connect_camera)
+        self.comboBox_step_state = ComboBoxNok(self.comboBox_step)
 
         self.show()
         

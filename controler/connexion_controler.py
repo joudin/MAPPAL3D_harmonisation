@@ -3,11 +3,11 @@ from view.widget_state import ButtonOk, ComboBoxOk, ComboBoxNok
 from PyQt5.QtWidgets import QApplication, QWidget
 from view.connexion_window import ConnexionWindow
 from tools.singleton import SingletonMeta
-from model.data_supplements import VERSION, operator_names, sn
-from model.camera import Camera, create_camera, get_active_camera
+from model.data_supplements import VERSION, operator_names, sn, PIXEL_SIZE, FOCAL_LENGTH
+from model.camera import create_camera, get_active_camera
 from model.harmonisation_data import create_harmonisation_data
 from controler.cube_position_controler import CubePositionControler
-from datetime import datetime
+from datetime import datetime 
 
 DELAY = 200
 
@@ -24,7 +24,8 @@ class ConnexionControler(metaclass=SingletonMeta):
         self.connexion_window.set_items_comboBox(self.connexion_window.comboBox_sn, sn)
         self.connexion_window.set_callback_change_comboBox(self.connexion_window.comboBox_operator_name, self.operator_name_change_comboBox)
         self.connexion_window.set_callback_change_comboBox(self.connexion_window.comboBox_sn, self.sn_change_comboBox)
-
+        self.connexion_window.set_items_comboBox(self.connexion_window.comboBox_step, ["--","Emission", "Réception"])
+        self.connexion_window.set_callback_change_comboBox(self.connexion_window.comboBox_step, self.step_change_comboBox)
 ############################ Callbacks #######################################
 
     def build_instructions_text(self):
@@ -39,6 +40,14 @@ class ConnexionControler(metaclass=SingletonMeta):
              if len(self.instruction_text) > 0:
                  self.instruction_text += "<br>"
              self.instruction_text += "Sélectionner le SN"
+
+         if type(self.connexion_window.comboBox_step_state) == ComboBoxOk:
+            pass
+         else:
+            if len(self.instruction_text) > 0:
+                self.instruction_text += "<br>"
+            self.instruction_text += "Sélectionner le étape de réglage"
+
          if type(self.connexion_window.button_connect_camera_state) == ButtonOk:
              pass
          else:
@@ -51,6 +60,7 @@ class ConnexionControler(metaclass=SingletonMeta):
         self.connexion_window.button_connect_camera_state.change_color()
         self.connexion_window.comboBox_operator_name_state.change_color()
         self.connexion_window.comboBox_sn_state.change_color()
+        self.connexion_window.comboBox_step_state.change_color()
         # On construit le texte donnant les instructions restantes en fonction de l'état des widgets
         self.build_instructions_text()
         self.connexion_window.instruction_label.setText(self.instruction_text)
@@ -87,14 +97,24 @@ class ConnexionControler(metaclass=SingletonMeta):
 
         self.connexion_window.log_text = f'Sélection du SN {self.connexion_window.value_comboBox_sn}'
        
+    def step_change_comboBox(self):
+        if self.connexion_window.comboBox_step.currentText() != "--":
+            self.connexion_window.comboBox_step_state = ComboBoxOk(self.connexion_window.comboBox_step)
+            self.connexion_window.value_comboBox_step = self.connexion_window.comboBox_step.currentText()
+        else:
+            self.connexion_window.comboBox_step_state = ComboBoxNok(self.connexion_window.comboBox_step)
+
+        self.connexion_window.log_text = f'Sélection de l\'étape {self.connexion_window.value_comboBox_step}'
+
     def next_button_action(self):
         if len(self.instruction_text) == 0: # Si toutes les états sont OK
-            data = create_harmonisation_data("JSON",str(self.connexion_window.value_comboBox_sn))
-            data.sn = str(self.connexion_window.value_comboBox_sn)
+            data = create_harmonisation_data("JSON",str(self.connexion_window.value_comboBox_sn),str(self.connexion_window.value_comboBox_step))
             data.write("SOFT_VERSION", VERSION)
             data.write("OPERATOR_NAME",str(self.connexion_window.value_comboBox_operator_name))
             data.write("SN",str(self.connexion_window.value_comboBox_sn))
             data.write("DATE",str(datetime.now().strftime("%d/%m/%Y")))
+            data.write("PIXEL_SIZE_IN_M", str(PIXEL_SIZE))
+            data.write("FOCAL_LENGTH_IN_M", str(FOCAL_LENGTH))
             data.save()
             self.cube_position_controler = CubePositionControler()
             QWidget.close(self.connexion_window)
