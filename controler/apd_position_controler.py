@@ -1,5 +1,5 @@
 
-from view.widget_state import ButtonOk, ComboBoxOk, ComboBoxNok, LineEditNoEmphasis, LineEditNok
+from view.widget_state import ButtonOk, ButtonNok, ComboBoxNok, LineEditNoEmphasis, LineEditNok
 from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtGui import QImage, QPixmap
 from tools.singleton import SingletonMeta
@@ -41,11 +41,33 @@ class ApdPositionControler(metaclass=SingletonMeta):
 
     def build_instructions_text(self):
         self.instruction_text = ""
+        if type(self.camera_window.button_up_action_state) == ButtonNok:
+            self.instruction_text += "Enregistrer la position APD haute"
+        if type(self.camera_window.button_down_action_state) == ButtonNok:
+            if len(self.instruction_text) > 0:
+                self.instruction_text += '\n'
+            self.instruction_text += "Enregistrer la position APD basse"
+        if type(self.camera_window.button_left_action_state) == ButtonNok:
+            if len(self.instruction_text) > 0:
+                self.instruction_text += '\n'
+            self.instruction_text += "Enregistrer la position APD gauche"
+        if type(self.camera_window.button_right_action_state) == ButtonNok:
+            if len(self.instruction_text) > 0:
+                self.instruction_text += '\n'
+            self.instruction_text += "Enregistrer la position APD droite"
+        if type(self.camera_window.button_action_state) == ButtonNok:
+            if len(self.instruction_text) > 0:
+                self.instruction_text += '\n'
+            self.instruction_text += "Appliquer le critere pass/fail"
         
         
     def update_gui(self):
         # Mise à jour de la GUI en se basant sur les états des widgets
         self.camera_window.button_action_state.change_color()
+        self.camera_window.button_up_action_state.change_color()
+        self.camera_window.button_down_action_state.change_color()
+        self.camera_window.button_left_action_state.change_color()
+        self.camera_window.button_right_action_state.change_color()
 
         self.np_image = get_active_camera().snapshot('APD') 
         # On met à jour l'image de la camera
