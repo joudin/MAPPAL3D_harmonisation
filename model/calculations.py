@@ -30,8 +30,28 @@ def gaussian2D(amplitude: int,
     y_axis = y_axis[:,np.newaxis]
     return amplitude*np.exp(-2*((x_axis-x_centroid)**2/x_width**2 + (y_axis-y_centroid)**2/y_width**2))
 
+def ring_sigmoid(coord, A, x0, y0, r, w, k=30.0):
+    """
+    Anneau avec bords lissés (sigmoïdes)
+    Meilleur compromis top-hat / gaussienne
 
-def build_fake_image(dim:tuple(),
+    Parameters
+    ----------
+    r : rayon central
+    w : épaisseur totale
+    k : raideur du bord (20–100 typique)
+    """
+    t = np.hypot(coord[:, 0] - x0, coord[:, 1] - y0)
+
+    r_in  = r - w / 2.0
+    r_out = r + w / 2.0
+
+    s_in  = 1.0 / (1.0 + np.exp(-k * (t - r_in)))
+    s_out = 1.0 / (1.0 + np.exp(-k * (r_out - t)))
+
+    return A * s_in * s_out
+
+def build_fake_spot_laser_image(dim:tuple(),
                     x_centroid: int,
                     y_centroid: int,
                     d4sigma_x: int,
@@ -48,6 +68,20 @@ def build_fake_image(dim:tuple(),
 def make_random_noise(dim:tuple()):
     return np.random.random(dim)
 
+def build_fake_apd_image(dim:tuple(),
+                         x_centroid:int,
+                         y_centroid:int,
+                         radius: int,
+                         width: int,
+                         a0: int
+                         ) ->np.array(int):
+    coord = []
+    for x in range(dim[1]):
+        for y in range(dim[0]):
+            coord.append((x, y))
+    fit = ring_sigmoid(np.array(coord),a0 , x_centroid, y_centroid, radius, width)
+    fit = fit.reshape(dim[1],dim[0]).astype(np.uint8)
+    return fit
 
 def get_centroid_position(image:np.array(float)) -> tuple():
     """
