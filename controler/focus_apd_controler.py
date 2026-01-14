@@ -50,7 +50,7 @@ class FocusApdControler(metaclass=SingletonMeta):
         self.camera_window.button_action_state.change_color()
         self.camera_window.lineEdit_state.change_color()
 
-        self.np_image = get_active_camera().snapshot() 
+        self.np_image = get_active_camera().snapshot('APD') 
         # On met à jour l'image de la camera
         colored_image = cv2.applyColorMap(self.np_image, cv2.COLORMAP_TURBO)
         height, width = self.np_image.shape

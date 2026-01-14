@@ -9,6 +9,7 @@ from model.harmonisation_data import get_active_harmonisation_data
 from view.camera_window import CameraWindowExtendedCenterEmission
 import cv2
 from model.calculations import get_gauss_fit_params, get_substracted_image
+from controler.apd_position_controler import ApdPositionControler
 import threading
 import numpy as np
 
@@ -55,7 +56,7 @@ class CenterEmissionControler(metaclass=SingletonMeta):
         self.camera_window.button_action_state.change_color()
         self.camera_window.button_action_extra_state.change_color()
         # On met à jour le tableau image en soustrayant le background
-        self.raw_image = get_active_camera().snapshot()
+        self.raw_image = get_active_camera().snapshot('SPOT_LASER')
         self.np_image = get_substracted_image(self.raw_image, get_active_harmonisation_data().background_image) 
         # On met à jour l'image de la camera
         colored_image = cv2.applyColorMap(self.np_image, cv2.COLORMAP_TURBO)
@@ -90,7 +91,7 @@ class CenterEmissionControler(metaclass=SingletonMeta):
     def capture_background_action(self):
         data = get_active_harmonisation_data()
         data.background_image = np.zeros((YDIM,XDIM), dtype=np.uint8)  # Reset background image
-        self.np_image = get_active_camera().snapshot() 
+        self.np_image = get_active_camera().snapshot('SPOT_LASER') 
         # On enregistre l'image de fond dans les données
         data.background_image = self.np_image.copy() # Ajouter à harmonistation data
         self.qimage.save(f'{data.working_dir}/{data.read("SN")}_BACKGROUND.png', 'PNG')
@@ -128,7 +129,7 @@ class CenterEmissionControler(metaclass=SingletonMeta):
    
     def next_button_action(self):
             if len(self.instruction_text) == 0:
-                #self.miror_position_controler = MirorPositionControler()
+                self.apd_position_controler = ApdPositionControler()
                 QWidget.close(self.camera_window)
                 self.camera_window.stop_timer(self.camera_window.timer)
             else:

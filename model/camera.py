@@ -8,7 +8,7 @@ import numpy as np
 #from model.calculations import build_fake_image, make_random_noise
 from tools.singleton import SingletonMeta
 from typing_extensions import override
-from model.calculations import build_fake_image, make_random_noise
+from model.calculations import build_fake_spot_laser_image, make_random_noise, build_fake_apd_image
 from model.data_supplements import XDIM, YDIM
 
 # Active camera accessor (service) : stocke l'instance de caméra créée
@@ -32,7 +32,7 @@ class Camera(metaclass=SingletonMeta):
     def disconnect(self) -> None:
         pass
     
-    def snapshot(self) -> np.array:
+    def snapshot(self, object:str) -> np.array:
         pass
 
     def stop(self) -> None:
@@ -60,9 +60,15 @@ class SimulationCamera(Camera):
         print(f'Camera {self.camera_type} stopped')
 
     @override
-    def snapshot(self) -> np.array:
+    def snapshot(self, object:str) -> np.array:
         dim = (YDIM,XDIM)
-        np_image = (build_fake_image(dim,self.x_centroid_simu, self.y_centroid_simu, self.width_simu,self.width_simu,200) +  3 * make_random_noise(dim)).astype(np.uint8)
+        if object == 'SPOT_LASER':
+            np_image = (build_fake_spot_laser_image(dim,self.x_centroid_simu, self.y_centroid_simu, self.width_simu,self.width_simu,200) +  3 * make_random_noise(dim)).astype(np.uint8)
+        elif object == 'APD':
+            np_image = (build_fake_apd_image(dim,self.x_centroid_simu,self.y_centroid_simu,self.width_simu,5,10).T + 3 * make_random_noise(dim)).astype(np.uint8)
+        else:
+            np_image = make_random_noise(dim).astype(np.uint8)
+
         return np_image
     
     @override

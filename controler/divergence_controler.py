@@ -59,7 +59,7 @@ class DivergenceControler(metaclass=SingletonMeta):
         self.camera_window.lineEdit_state.change_color()
         self.camera_window.button_action_extra_state.change_color()
         # On met à jour le tableau image en soustrayant le background
-        self.raw_image = get_active_camera().snapshot()
+        self.raw_image = get_active_camera().snapshot('SPOT_LASER')
         self.np_image = get_substracted_image(self.raw_image, get_active_harmonisation_data().background_image)
         # On met à jour l'image de la camera
         colored_image = cv2.applyColorMap(self.np_image, cv2.COLORMAP_TURBO)
@@ -116,7 +116,7 @@ class DivergenceControler(metaclass=SingletonMeta):
     def capture_background_action(self):
         data = get_active_harmonisation_data()
         data.background_image = np.zeros((YDIM,XDIM), dtype=np.uint8)  # Reset background image
-        self.np_image = get_active_camera().snapshot() 
+        self.np_image = get_active_camera().snapshot('SPOT_LASER') 
         # On enregistre l'image de fond dans les données
         data.background_image = self.np_image.copy() # Ajouter à harmonistation data
         self.qimage.save(f'{data.working_dir}/{data.read("SN")}_BACKGROUND.png', 'PNG')

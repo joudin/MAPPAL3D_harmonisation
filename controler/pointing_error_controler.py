@@ -49,7 +49,7 @@ class PointingErrorControler(metaclass=SingletonMeta):
         self.camera_window.button_action_state.change_color()
 
          # On met à jour le tableau image en soustrayant le background
-        self.raw_image = get_active_camera().snapshot()
+        self.raw_image = get_active_camera().snapshot('SPOT_LASER')
         self.np_image = get_substracted_image(self.raw_image, get_active_harmonisation_data().background_image)
         # On met à jour l'image de la camera
         colored_image = cv2.applyColorMap(self.np_image, cv2.COLORMAP_TURBO)
