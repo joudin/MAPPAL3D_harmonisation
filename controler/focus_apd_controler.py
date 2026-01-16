@@ -10,6 +10,7 @@ from view.camera_window import CameraWindowExtendedFocusApd
 from controler.center_emission_controler import CenterEmissionControler
 import cv2
 import threading
+import numpy as np
 
 DELAY = 200
 
@@ -52,7 +53,7 @@ class FocusApdControler(metaclass=SingletonMeta):
 
         self.np_image = get_active_camera().snapshot('APD') 
         # On met à jour l'image de la camera
-        colored_image = cv2.applyColorMap(self.np_image, cv2.COLORMAP_TURBO)
+        colored_image = cv2.applyColorMap(self.np_image.astype(np.uint8), cv2.COLORMAP_TURBO)
         height, width = self.np_image.shape
         bytes_per_line = width
         # Convertir en QImage

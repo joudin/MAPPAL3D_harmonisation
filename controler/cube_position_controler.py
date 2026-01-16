@@ -11,7 +11,7 @@ import cv2
 from model.calculations import get_gauss_fit_params
 import threading
 from controler.miror_position_controler import MirorPositionControler
-
+import numpy as np
 DELAY = 200
 
 class CubePositionControler(metaclass=SingletonMeta):
@@ -51,7 +51,7 @@ class CubePositionControler(metaclass=SingletonMeta):
 
         self.np_image = get_active_camera().snapshot('SPOT_LASER') 
         # On met à jour l'image de la camera
-        colored_image = cv2.applyColorMap(self.np_image, cv2.COLORMAP_TURBO)
+        colored_image = cv2.applyColorMap(self.np_image.astype(np.uint8), cv2.COLORMAP_TURBO)
         height, width = self.np_image.shape
         bytes_per_line = width
         # Convertir en QImage
