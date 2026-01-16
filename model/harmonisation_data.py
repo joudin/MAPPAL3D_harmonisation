@@ -59,10 +59,14 @@ class JsonHarmonisationData(HarmonisationData) :
                                "LASER_POSITION_Y_RECEPTION",
                                "DISTANCE_CUBE_LASER_IN_PX_RECEPTION",
                                "RECEPTION_WEDGE_WIDTH_IN_MM"
-                               "APD_POSITION_UP",
-                               "APD_POSITION_DOWN",
-                               "APD_POSITION_LEFT",
-                               "APD_POSITION_RIGHT"]
+                               "APD_POSITION_UP_X",
+                               "APD_POSITION_UP_Y",
+                               "APD_POSITION_DOWN_X",
+                               "APD_POSITION_DOWN_Y",
+                               "APD_POSITION_LEFT_X",
+                               "APD_POSITION_LEFT_Y"
+                               "APD_POSITION_RIGHT_X",
+                               "APD_POSITION_RIGHT_Y"]
 
         self.data_dict = {key: None for key in self.keys_data_list}
         self.sn = ""
@@ -81,10 +85,14 @@ class JsonHarmonisationData(HarmonisationData) :
         self.step = None
         self.recetion_final_wedge_width_in_mm = None
         self.background_image = np.zeros((YDIM,XDIM), dtype=np.uint8)  # Placeholder for background image
-        self.apd_position_up = None
-        self.apd_position_down = None
-        self.apd_position_left = None
-        self.apd_position_right = None
+        self.apd_position_up_x = None
+        self.apd_position_up_y = None
+        self.apd_position_down_x = None
+        self.apd_position_down_y = None
+        self.apd_position_left_x = None
+        self.apd_position_left_y = None
+        self.apd_position_right_x = None
+        self.apd_position_right_y = None
 
     def write(self, key:str, value:str):
         self.data_dict[key] = value
