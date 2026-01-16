@@ -7,8 +7,10 @@ from model.data_supplements import VERSION, XDIM, YDIM
 from model.camera import  get_active_camera
 from model.harmonisation_data import get_active_harmonisation_data
 from view.camera_window import CameraWindowApdPosition
+from model.calculations import get_circle_fit_params
 import cv2
 import threading
+import numpy as np
 
 DELAY = 200
 
@@ -36,7 +38,34 @@ class ApdPositionControler(metaclass=SingletonMeta):
             self.camera_window.set_slider_value(self.camera_window.slider_x_centroid, int(XDIM/2))
             self.camera_window.set_slider_value(self.camera_window.slider_y_centroid, int(YDIM/2))
             self.camera_window.set_slider_value(self.camera_window.slider_width, int(XDIM/10))
+        # PAramètres pour fit circulaires
+        DELTA_CENTER = 50#30
+        LIM_DELTA_CENTER = 200
 
+
+        # For circle fitting
+        I_MIN = 75 
+        I_STD = 100
+        I_MAX = 255 
+
+        APD_R_MIN = 93
+        APD_R_STD = 103
+        APD_R_MAX = 113 
+
+        DECAY_MIN = 100
+        DECAY_STD = 300
+        DECAY_MAX = 600
+
+        pulse_center_x = int(YDIM/2)
+        pulse_center_y = int(XDIM/2)
+
+        self.bounds=([I_MIN,  pulse_center_x-LIM_DELTA_CENTER, pulse_center_y-LIM_DELTA_CENTER, APD_R_MIN, DECAY_MIN],   # bornes inf
+                [I_MAX, pulse_center_x+LIM_DELTA_CENTER, pulse_center_y+LIM_DELTA_CENTER, APD_R_MAX, DECAY_MAX])   # bornes sup
+        
+        self.p0_init_up = (I_STD, pulse_center_x+DELTA_CENTER, pulse_center_y, APD_R_STD, DECAY_STD)
+        self.p0_init_down = (I_STD, pulse_center_x-DELTA_CENTER, pulse_center_y, APD_R_STD, DECAY_STD)
+        self.p0_init_left = (I_STD, pulse_center_x, pulse_center_y+DELTA_CENTER, APD_R_STD, DECAY_STD)
+        self.p0_init_right = (I_STD, pulse_center_x, pulse_center_y-DELTA_CENTER, APD_R_STD, DECAY_STD)
 ############################ Callbacks #######################################
 
     def build_instructions_text(self):
@@ -71,7 +100,7 @@ class ApdPositionControler(metaclass=SingletonMeta):
 
         self.np_image = get_active_camera().snapshot('APD') 
         # On met à jour l'image de la camera
-        colored_image = cv2.applyColorMap(self.np_image, cv2.COLORMAP_TURBO)
+        colored_image = cv2.applyColorMap(self.np_image.astype(np.uint8), cv2.COLORMAP_TURBO)
         height, width = self.np_image.shape
         bytes_per_line = width
         # Convertir en QImage
@@ -104,13 +133,18 @@ class ApdPositionControler(metaclass=SingletonMeta):
         action_thread.start()
 
     def apd_position_up(self):
-        # On enregistre la position
-        # On enregistre l'image
-        # On met à jour le log
-        # On met à jour le label affichant le résulat
+        # 1 - Evaluer la position APD
+        # 2 - Enregistrer la position dans data
+        # 3 - Enregistrer la position dans le JSON
+        # 4 - Enregistrer l'image
+        # 5 - Mettre à jour le label résultat
+        # 6 - Mettre à jour le log
+        # 7 - Mettre à jour le statut bouton
         # Si donnee dans position_up et position_down alors supprimer les deux données et passer au rouge le bouton down
-        self.camera_window.button_up_action_state = ButtonOk(self.camera_window.button_up_action)
+        params = get_circle_fit_params(self.np_image,p0=self.p0_init_up, bounds=self.bounds)
+        print(f'params = {params}')
         self.camera_window.log_text = "Position APD haut enregistrée."
+        self.camera_window.button_up_action_state = ButtonOk(self.camera_window.button_up_action)
         
     def run_apd_position_down_on_new_thread(self):
         self.camera_window.log_text = "Enregistrement de l'image de l'APD et calcule de la position APD down en cours..."
