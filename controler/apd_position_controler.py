@@ -142,6 +142,14 @@ class ApdPositionControler(metaclass=SingletonMeta):
         # 7 - Mettre à jour le statut bouton
         # Si donnee dans position_up et position_down alors supprimer les deux données et passer au rouge le bouton down
         params = get_circle_fit_params(self.np_image,p0=self.p0_init_up, bounds=self.bounds)
+        data = get_active_harmonisation_data()
+        data.apd_position_up_x = params['x_center']
+        data.apd_position_up_y = params['y_center']
+        data.write(f"APD_POSITION_UP_X{data.step.upper()}", str(data.apd_position_up_x))
+        data.write(f"APD_POSITION_UP_Y{data.step.upper()}", str(data.apd_position_up_y))
+        data.save()
+        self.qimage.save(f'{data.working_dir}/{data.read("SN")}APD_POSITION_UP_{data.step}.png', 'PNG')
+        self.camera_window.set_label_text(self.camera_window.button_up_results_label,f'X = {data.apd_position_up_x:.1f} Y = {data.apd_position_up_y:.1f}')
         print(f'params = {params}')
         self.camera_window.log_text = "Position APD haut enregistrée."
         self.camera_window.button_up_action_state = ButtonOk(self.camera_window.button_up_action)
