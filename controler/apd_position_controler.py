@@ -141,8 +141,13 @@ class ApdPositionControler(metaclass=SingletonMeta):
         # 6 - Mettre à jour le log
         # 7 - Mettre à jour le statut bouton
         # Si donnee dans position_up et position_down alors supprimer les deux données et passer au rouge le bouton down
-        params = get_circle_fit_params(self.np_image,p0=self.p0_init_up, bounds=self.bounds)
         data = get_active_harmonisation_data()
+        if data.apd_position_up_x is not None and data.apd_position_up_y is not None:
+            data.apd_position_up_x = None
+            data.apd_position_up_y = None
+            self.camera_window.button_down_action_state = ButtonNok(self.camera_window.button_down_action)
+        
+        params = get_circle_fit_params(self.np_image,p0=self.p0_init_up, bounds=self.bounds)
         data.apd_position_up_x = params['x_center']
         data.apd_position_up_y = params['y_center']
         data.write(f"APD_POSITION_UP_X{data.step.upper()}", str(data.apd_position_up_x))
