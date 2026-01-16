@@ -51,6 +51,10 @@ def ring_sigmoid(coord, A, x0, y0, r, w, k=30.0):
 
     return A * s_in * s_out
 
+def ring_gaussian(coord, A, x0, y0, r, s):
+    t = np.sqrt(np.power(coord[:, 0] - x0, 2) + np.power(coord[:, 1] - y0, 2))
+    return A * np.exp(-(np.power(t - r, 2) / s))
+
 def build_fake_spot_laser_image(dim:tuple(),
                     x_centroid: int,
                     y_centroid: int,
@@ -79,8 +83,8 @@ def build_fake_apd_image(dim:tuple(),
     for x in range(dim[1]):
         for y in range(dim[0]):
             coord.append((x, y))
-    fit = ring_sigmoid(np.array(coord),a0 , x_centroid, y_centroid, radius, width)
-    fit = fit.reshape(dim[1],dim[0]).astype(np.uint8)
+    fit = ring_gaussian(np.array(coord),a0 , x_centroid, y_centroid, radius, width)
+    fit = fit.reshape(dim[1],dim[0])#.astype(np.uint8)
     return fit
 
 def get_centroid_position(image:np.array(float)) -> tuple():
@@ -136,11 +140,12 @@ def get_circle_fit_params(image:np.array(np.float32), p0:tuple(), bounds:tuple()
             val.append(image[y, x])
 
     params, pcov = optimize.curve_fit(
-        func_circle3D,           # f : fonction
+        ring_gaussian,           # f : fonction
         coord,                   # xdata : coordonnées d'entrée
         val,                     # ydata : valeurs mesurées correspondantes
         p0=p0,                   # initiales guess
-        bounds=bounds            # bornes
+        #bounds=bounds            # bornes
+        #TODO remettre les bornes active
     )
     data = {'amplitude': params[0], 'x_center' : params[1], 'y_center' : params[2], 'r' : params[3], 's' : params[4]}
     return data
