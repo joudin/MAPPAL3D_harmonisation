@@ -1,7 +1,7 @@
 
 from view.widget_state import ButtonOk, ButtonNok, ComboBoxNok, LineEditNoEmphasis, LineEditNok
 from PyQt5.QtWidgets import QApplication, QWidget
-from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtGui import QImage, QPixmap, QPainter, QPen, QColor
 from tools.singleton import SingletonMeta
 from model.data_supplements import VERSION, XDIM, YDIM
 from model.camera import  get_active_camera
@@ -108,6 +108,15 @@ class ApdPositionControler(metaclass=SingletonMeta):
         bytes_per_line = width
         # Convertir en QImage
         self.qimage = QImage(colored_image.data, width, height, bytes_per_line * 3, QImage.Format_RGB888)
+        
+       
+        if get_active_harmonisation_data().apd_position_up_x is not None and get_active_harmonisation_data().apd_position_up_y is not None:
+            p = QPainter(self.qimage)
+            p.setPen(QPen(QColor(255, 0, 0), 1))
+            size = 10
+            p.drawLine(int(get_active_harmonisation_data().apd_position_up_x) - size, int(get_active_harmonisation_data().apd_position_up_y) - size, int(get_active_harmonisation_data().apd_position_up_x) + size, int(get_active_harmonisation_data().apd_position_up_y) + size)  # diagonale \
+            p.drawLine(int(get_active_harmonisation_data().apd_position_up_x) - size, int(get_active_harmonisation_data().apd_position_up_y) + size, int(get_active_harmonisation_data().apd_position_up_x) + size, int(get_active_harmonisation_data().apd_position_up_y) - size)  # diagonale /
+            p.end()
         pixmap = QPixmap.fromImage(self.qimage)
         self.camera_window.image_label.setPixmap(pixmap)
 
@@ -143,6 +152,7 @@ class ApdPositionControler(metaclass=SingletonMeta):
         # 5 - Mettre à jour le label résultat
         # 6 - Mettre à jour le log
         # 7 - Mettre à jour le statut bouton
+        # 8 - Afficher la position du centre sur l'image
         # Si donnee dans position_up et position_down alors supprimer les deux données et passer au rouge le bouton down
         data = get_active_harmonisation_data()
         if data.apd_position_up_x is not None and data.apd_position_up_y is not None:
