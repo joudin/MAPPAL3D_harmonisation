@@ -30,12 +30,15 @@ class FocusApdControler(metaclass=SingletonMeta):
             self.camera_window.set_callback_change_slider(self.camera_window.slider_x_centroid, self.x_centroid_change_slider_action)
             self.camera_window.set_callback_change_slider(self.camera_window.slider_y_centroid, self.y_centroid_change_slider_action)
             self.camera_window.set_callback_change_slider(self.camera_window.slider_width, self.width_change_slider_action)
+            self.camera_window.set_callback_change_slider(self.camera_window.slider_amplitude, self.amplitude_change_slider_action)
             self.camera_window.set_callback_range_slider(self.camera_window.slider_x_centroid, 0, XDIM)
             self.camera_window.set_callback_range_slider(self.camera_window.slider_y_centroid, 0, YDIM)
             self.camera_window.set_callback_range_slider(self.camera_window.slider_width, 1, int(XDIM/2))
+            self.camera_window.set_callback_range_slider(self.camera_window.slider_amplitude, 0, 256)
             self.camera_window.set_slider_value(self.camera_window.slider_x_centroid, int(XDIM/2))
             self.camera_window.set_slider_value(self.camera_window.slider_y_centroid, int(YDIM/2))
             self.camera_window.set_slider_value(self.camera_window.slider_width, int(XDIM/10))
+            self.camera_window.set_slider_value(self.camera_window.slider_amplitude, get_active_camera().amplitude_simu)
 
 ############################ Callbacks #######################################
 
@@ -81,6 +84,11 @@ class FocusApdControler(metaclass=SingletonMeta):
         cam = get_active_camera()
         if cam.__class__.__name__ == "SimulationCamera":
             cam.width_simu = self.camera_window.slider_width.value()
+
+    def amplitude_change_slider_action(self):
+        cam = get_active_camera()
+        if cam.__class__.__name__ == "SimulationCamera":
+            cam.amplitude_simu = self.camera_window.slider_amplitude.value()
 
     def run_save_apd_image_new_thread(self):
         self.camera_window.log_text = "Enregistrement de l'image de l'APD au plan focal en cours..."

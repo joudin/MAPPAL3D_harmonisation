@@ -43,9 +43,11 @@ class CameraWindow(QWidget):
         self.slider_x_centroid = QSlider(QtCore.Qt.Horizontal)
         self.slider_y_centroid = QSlider(QtCore.Qt.Horizontal)
         self.slider_width = QSlider(QtCore.Qt.Horizontal)
+        self.slider_amplitude = QSlider(QtCore.Qt.Horizontal)
         self.slider_x_centroid_label = QLabel('X_centroid')
         self.slider_y_centroid_label = QLabel('Y_centroid')
         self.slider_width_label = QLabel('Width')
+        self.slider_amplitude_label = QLabel('Amplitude')
 
         # Label pour informer l'utilisateur des logs
         self.log_text = ""
@@ -88,6 +90,11 @@ class CameraWindow(QWidget):
             self.slider_layout_h_3.addWidget(self.slider_width_label)
             self.slider_layout_h_3.addWidget(self.slider_width)
             self.main_layout_v.addLayout(self.slider_layout_h_3)
+
+            self.slider_layout_h_4 = QHBoxLayout()
+            self.slider_layout_h_4.addWidget(self.slider_amplitude_label)
+            self.slider_layout_h_4.addWidget(self.slider_amplitude)
+            self.main_layout_v.addLayout(self.slider_layout_h_4)
 
         self.extra_layout_h = QHBoxLayout()
         self.main_layout_v.addLayout(self.extra_layout_h)
@@ -223,9 +230,11 @@ class CameraWindowApdPosition(QWidget):
         self.slider_x_centroid = QSlider(QtCore.Qt.Horizontal)
         self.slider_y_centroid = QSlider(QtCore.Qt.Horizontal)
         self.slider_width = QSlider(QtCore.Qt.Horizontal)
+        self.slider_amplitude = QSlider(QtCore.Qt.Horizontal)
         self.slider_x_centroid_label = QLabel('X_centroid')
         self.slider_y_centroid_label = QLabel('Y_centroid')
         self.slider_width_label = QLabel('Width')
+        self.slider_amplitude_label = QLabel('Amplitude')
 
         # Label pour informer l'utilisateur des logs
         self.log_text = ""
@@ -300,6 +309,11 @@ class CameraWindowApdPosition(QWidget):
             self.slider_layout_h_3.addWidget(self.slider_width_label)
             self.slider_layout_h_3.addWidget(self.slider_width)
             self.main_layout_v.addLayout(self.slider_layout_h_3)
+
+            self.slider_layout_h_4 = QHBoxLayout()
+            self.slider_layout_h_4.addWidget(self.slider_amplitude_label)
+            self.slider_layout_h_4.addWidget(self.slider_amplitude)
+            self.main_layout_v.addLayout(self.slider_layout_h_4)
 
         self.main_layout_v.addWidget(self.button_action)
         self.main_layout_v.addWidget(self.button_next)

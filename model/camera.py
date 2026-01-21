@@ -45,6 +45,7 @@ class SimulationCamera(Camera):
         self.x_centroid_simu = int(XDIM/2)
         self.y_centroid_simu = int(YDIM/2)
         self.width_simu = 103
+        self.amplitude_simu = 200
 
     @override
     def __str__(self):
@@ -63,10 +64,10 @@ class SimulationCamera(Camera):
     def snapshot(self, object:str) -> np.array:
         dim = (YDIM,XDIM)
         if object == 'SPOT_LASER':
-            np_image = (build_fake_spot_laser_image(dim,self.x_centroid_simu, self.y_centroid_simu, self.width_simu,self.width_simu,200) +  3 * make_random_noise(dim))#.astype(np.uint8)
+            np_image = (build_fake_spot_laser_image(dim,self.x_centroid_simu, self.y_centroid_simu, self.width_simu,self.width_simu,self.amplitude_simu) +  3 * make_random_noise(dim))#.astype(np.uint8)
         elif object == 'APD':
             #np_image = (build_fake_apd_image(dim,self.x_centroid_simu,self.y_centroid_simu,self.width_simu,5,100).T + 3 * make_random_noise(dim)).astype(np.uint8)
-            np_image = build_fake_apd_image(dim,self.x_centroid_simu,self.y_centroid_simu,self.width_simu,300,100).T# + 3 * make_random_noise(dim)).astype(np.uint8)
+            np_image = build_fake_apd_image(dim,self.x_centroid_simu,self.y_centroid_simu,self.width_simu,300,self.amplitude_simu).T# + 3 * make_random_noise(dim)).astype(np.uint8)
         else:
             np_image = make_random_noise(dim)#.astype(np.uint8)
 
