@@ -120,10 +120,10 @@ class MirorPositionControler(metaclass=SingletonMeta):
         data.miror_position_y = params['y_center']
         data.write(f"MIROR_POSITION_X_{data.step.upper()}", str(params['x_center']))
         data.write(f"MIROR_POSITION_Y_{data.step.upper()}", str(params['y_center']))
-        data.save()
         self.qimage.save(f'{data.working_dir}/{data.read("SN")}_MIROR_POSITION_{data.step.upper()}.png', 'PNG')
         data.distance_cube_miror_in_px = get_euclidian_distance((data.cube_position_x, data.cube_position_y), (data.miror_position_x, data.miror_position_y))['euclidian']
         data.write(f"DISTANCE_CUBE_MIROR_IN_PX_{data.step.upper()}", str(data.distance_cube_miror_in_px))
+        data.save()
         if data.distance_cube_miror_in_px <= EUCLIDIAN_DISTANCE_CUBE_MIROR_THRESHOLD_IN_PX:
             self.camera_window.button_action_state = ButtonOk(self.camera_window.button_action)
             self.camera_window.log_text = f'Position du miroir enregistrée : X={params["x_center"]:.2f}, Y={params["y_center"]:.2f}\nDistance cube-miroir = {data.distance_cube_miror_in_px:.2f} px (OK max ={EUCLIDIAN_DISTANCE_CUBE_MIROR_THRESHOLD_IN_PX} px)'

@@ -8,7 +8,7 @@ from model.camera import  get_active_camera
 from model.harmonisation_data import get_active_harmonisation_data
 from view.camera_window import CameraWindowExtendedCenterEmission
 import cv2
-from model.calculations import get_gauss_fit_params, get_substracted_image
+from model.calculations import get_gauss_fit_params, get_substracted_image, get_euclidian_distance
 from controler.apd_position_controler import ApdPositionControler
 import threading
 import numpy as np
@@ -130,9 +130,10 @@ class CenterEmissionControler(metaclass=SingletonMeta):
         data.laser_position_y = params['y_center']
         data.write(f"LASER_POSITION_X_{data.step.upper()}", str(params['x_center']))
         data.write(f"LASER_POSITION_Y_{data.step.upper()}", str(params['y_center']))
-        data.save()
         self.qimage.save(f'{data.working_dir}/{data.read("SN")}_LASER_POSITION_{data.step}.png', 'PNG')
         self.camera_window.log_text = f'Position du laser enregistrée : X={params["x_center"]:.2f}, Y={params["y_center"]:.2f}'
+        data.write(f"DISTANCE_CUBE_LASER_IN_PX_{data.step.upper()}", str(get_euclidian_distance((data.cube_position_x, data.cube_position_y), (data.laser_position_x, data.laser_position_y))['euclidian']))
+        data.save()
         self.camera_window.button_action_state = ButtonOk(self.camera_window.button_action)
    
     def next_button_action(self):

@@ -213,10 +213,10 @@ class ApdPositionControler(metaclass=SingletonMeta):
         params = get_circle_fit_params(self.np_image,p0=self.p0_init_down, bounds=self.bounds)
         data.apd_position_up_x = params['x_center']
         data.apd_position_up_y = params['y_center']
-        data.write(f"APD_POSITION_UP_X{data.step.upper()}", str(data.apd_position_up_x))
-        data.write(f"APD_POSITION_UP_Y{data.step.upper()}", str(data.apd_position_up_y))
+        data.write(f"APD_POSITION_UP_X", str(data.apd_position_up_x))
+        data.write(f"APD_POSITION_UP_Y", str(data.apd_position_up_y))
         data.save()
-        self.qimage.save(f'{data.working_dir}/{data.read("SN")}APD_POSITION_UP_{data.step}.png', 'PNG')
+        self.qimage.save(f'{data.working_dir}/{data.read("SN")}APD_POSITION_UP.png', 'PNG')
         self.camera_window.set_label_text(self.camera_window.button_up_results_label,f'X = {data.apd_position_up_x:.1f} Y = {data.apd_position_up_y:.1f}')
         self.camera_window.log_text = "Position APD haut enregistrée."
         self.camera_window.button_up_action_state = ButtonOk(self.camera_window.button_up_action)
@@ -248,10 +248,10 @@ class ApdPositionControler(metaclass=SingletonMeta):
         params = get_circle_fit_params(self.np_image,p0=self.p0_init_down, bounds=self.bounds)
         data.apd_position_down_x = params['x_center']
         data.apd_position_down_y = params['y_center']
-        data.write(f"APD_POSITION_DOWN_X{data.step.upper()}", str(data.apd_position_down_x))
-        data.write(f"APD_POSITION_DOWN_Y{data.step.upper()}", str(data.apd_position_down_y))
+        data.write(f"APD_POSITION_DOWN_X", str(data.apd_position_down_x))
+        data.write(f"APD_POSITION_DOWN_Y", str(data.apd_position_down_y))
         data.save()
-        self.qimage.save(f'{data.working_dir}/{data.read("SN")}APD_POSITION_DOWN_{data.step}.png', 'PNG')
+        self.qimage.save(f'{data.working_dir}/{data.read("SN")}APD_POSITION_DOWN.png', 'PNG')
         self.camera_window.set_label_text(self.camera_window.button_down_results_label,f'X = {data.apd_position_down_x:.1f} Y = {data.apd_position_down_y:.1f}')
         self.camera_window.log_text = "Position APD bas enregistrée."
         self.camera_window.button_down_action_state = ButtonOk(self.camera_window.button_down_action)
@@ -283,10 +283,10 @@ class ApdPositionControler(metaclass=SingletonMeta):
         params = get_circle_fit_params(self.np_image,p0=self.p0_init_down, bounds=self.bounds)
         data.apd_position_left_x = params['x_center']
         data.apd_position_left_y = params['y_center']
-        data.write(f"APD_POSITION_LEFT_X{data.step.upper()}", str(data.apd_position_left_x))
-        data.write(f"APD_POSITION_LEFT_Y{data.step.upper()}", str(data.apd_position_left_y))
+        data.write(f"APD_POSITION_LEFT_X", str(data.apd_position_left_x))
+        data.write(f"APD_POSITION_LEFT_Y", str(data.apd_position_left_y))
         data.save()
-        self.qimage.save(f'{data.working_dir}/{data.read("SN")}APD_POSITION_LEFT_{data.step}.png', 'PNG')
+        self.qimage.save(f'{data.working_dir}/{data.read("SN")}APD_POSITION_LEFT.png', 'PNG')
         self.camera_window.set_label_text(self.camera_window.button_left_results_label,f'X = {data.apd_position_left_x:.1f} Y = {data.apd_position_left_y:.1f}')
         self.camera_window.log_text = "Position APD gauche enregistrée."
         self.camera_window.button_left_action_state = ButtonOk(self.camera_window.button_left_action)
@@ -318,10 +318,10 @@ class ApdPositionControler(metaclass=SingletonMeta):
         params = get_circle_fit_params(self.np_image,p0=self.p0_init_down, bounds=self.bounds)
         data.apd_position_right_x = params['x_center']
         data.apd_position_right_y = params['y_center']
-        data.write(f"APD_POSITION_RIGHT_X{data.step.upper()}", str(data.apd_position_right_x))
-        data.write(f"APD_POSITION_RIGHT_Y{data.step.upper()}", str(data.apd_position_right_y))
+        data.write(f"APD_POSITION_RIGHT_X", str(data.apd_position_right_x))
+        data.write(f"APD_POSITION_RIGHT_Y", str(data.apd_position_right_y))
         data.save()
-        self.qimage.save(f'{data.working_dir}/{data.read("SN")}APD_POSITION_RIGHT_{data.step}.png', 'PNG')
+        self.qimage.save(f'{data.working_dir}/{data.read("SN")}APD_POSITION_RIGHT.png', 'PNG')
         self.camera_window.set_label_text(self.camera_window.button_right_results_label,f'X = {data.apd_position_right_x:.1f} Y = {data.apd_position_right_y:.1f}')
         self.camera_window.log_text = "Position APD droit enregistrée."
         self.camera_window.button_right_action_state = ButtonOk(self.camera_window.button_right_action)
