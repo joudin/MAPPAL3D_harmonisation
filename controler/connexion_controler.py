@@ -108,7 +108,7 @@ class ConnexionControler(metaclass=SingletonMeta):
 
     def next_button_action(self):
         if len(self.instruction_text) == 0: # Si toutes les états sont OK
-            data = create_harmonisation_data("JSON",str(self.connexion_window.value_comboBox_sn),str(self.connexion_window.value_comboBox_step))
+            data = create_harmonisation_data("JSON",str(self.connexion_window.value_comboBox_sn),str(self.connexion_window.value_comboBox_step).upper())
             data.write("SOFT_VERSION", VERSION)
             data.write("OPERATOR_NAME",str(self.connexion_window.value_comboBox_operator_name))
             data.write("SN",str(self.connexion_window.value_comboBox_sn))

@@ -38,37 +38,41 @@ class HarmonisationData(metaclass=SingletonMeta):
         pass
 
 class JsonHarmonisationData(HarmonisationData) :
-    def __init__(self):
-        self.keys_data_list = ["SOFT_VERSION","SN", "OPERATOR_NAME", "DATE", "PIXEL_SIZE_IN_M", "FOCAL_LENGTH_IN_M",
-                               "CUBE_POSITION_X_EMISSION",
-                               "CUBE_POSITION_Y_EMISSION",
-                               "CUBE_POSITION_X_RECEPTION",
-                               "CUBE_POSITION_Y_RECEPTION",
-                               "MIROR_POSITION_X_EMISSION",
-                               "MIROR_POSITION_Y_EMISSION",
-                               "MIROR_POSITION_X_RECEPTION",
-                               "MIROR_POSITION_Y_RECEPTION",
-                               "DISTANCE_CUBE_MIROR_IN_PX_EMISSION",
-                               "DISTANCE_CUBE_MIROR_IN_PX_RECEPTION",
-                               "DIVERGENCE_IN_MRAD",
-                               "EMISSION_WEDGE_WIDTH_IN_MM",
-                               "LASER_POSITION_X_EMISSION",
-                               "LASER_POSITION_Y_EMISSION",
-                               "DISTANCE_CUBE_LASER_IN_PX_EMISSION",
-                               "LASER_POSITION_X_RECEPTION",
-                               "LASER_POSITION_Y_RECEPTION",
-                               "DISTANCE_CUBE_LASER_IN_PX_RECEPTION",
-                               "RECEPTION_WEDGE_WIDTH_IN_MM"
-                               "APD_POSITION_UP_X",
-                               "APD_POSITION_UP_Y",
-                               "APD_POSITION_DOWN_X",
-                               "APD_POSITION_DOWN_Y",
-                               "APD_POSITION_LEFT_X",
-                               "APD_POSITION_LEFT_Y"
-                               "APD_POSITION_RIGHT_X",
-                               "APD_POSITION_RIGHT_Y",
-                               "DISTANCE_LASER_APD_IN_PX"
-                               ]
+    def __init__(self,step:str):
+        if step == 'EMISSION':
+            self.keys_data_list = ["SOFT_VERSION","SN", "OPERATOR_NAME", "DATE", "PIXEL_SIZE_IN_M", "FOCAL_LENGTH_IN_M",
+                                "CUBE_POSITION_X_EMISSION",
+                                "CUBE_POSITION_Y_EMISSION",
+                                "MIROR_POSITION_X_EMISSION",
+                                "MIROR_POSITION_Y_EMISSION",
+                                "DISTANCE_CUBE_MIROR_IN_PX_EMISSION",
+                                "DIVERGENCE_IN_MRAD",
+                                "EMISSION_WEDGE_WIDTH_IN_MM",
+                                "LASER_POSITION_X_EMISSION",
+                                "LASER_POSITION_Y_EMISSION",
+                                "DISTANCE_CUBE_LASER_IN_PX_EMISSION"
+                                ]
+        else:
+            self.keys_data_list = ["SOFT_VERSION","SN", "OPERATOR_NAME", "DATE", "PIXEL_SIZE_IN_M", "FOCAL_LENGTH_IN_M",
+                                "CUBE_POSITION_X_RECEPTION",
+                                "CUBE_POSITION_Y_RECEPTION",
+                                "MIROR_POSITION_X_RECEPTION",
+                                "MIROR_POSITION_Y_RECEPTION",
+                                "DISTANCE_CUBE_MIROR_IN_PX_RECEPTION",
+                                "LASER_POSITION_X_RECEPTION",
+                                "LASER_POSITION_Y_RECEPTION",
+                                "DISTANCE_CUBE_LASER_IN_PX_RECEPTION",
+                                "RECEPTION_WEDGE_WIDTH_IN_MM",
+                                "APD_POSITION_UP_X",
+                                "APD_POSITION_UP_Y",
+                                "APD_POSITION_DOWN_X",
+                                "APD_POSITION_DOWN_Y",
+                                "APD_POSITION_LEFT_X",
+                                "APD_POSITION_LEFT_Y",
+                                "APD_POSITION_RIGHT_X",
+                                "APD_POSITION_RIGHT_Y",
+                                "DISTANCE_LASER_APD_IN_PX"
+                                ]
 
         self.data_dict = {key: None for key in self.keys_data_list}
         self.sn = ""
@@ -132,7 +136,7 @@ def create_harmonisation_data(type_dest:str,sn:str,step:str) -> HarmonisationDat
             break
 
     if type_dest.upper() == "JSON": 
-        data = JsonHarmonisationData() 
+        data = JsonHarmonisationData(step=step) 
         data.working_dir = path
         data.fileName = f'{path}\\SN{sn}.json'
         data.sn = sn
