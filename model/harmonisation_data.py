@@ -66,7 +66,9 @@ class JsonHarmonisationData(HarmonisationData) :
                                "APD_POSITION_LEFT_X",
                                "APD_POSITION_LEFT_Y"
                                "APD_POSITION_RIGHT_X",
-                               "APD_POSITION_RIGHT_Y"]
+                               "APD_POSITION_RIGHT_Y",
+                               "DISTANCE_LASER_APD_IN_PX"
+                               ]
 
         self.data_dict = {key: None for key in self.keys_data_list}
         self.sn = ""
@@ -93,6 +95,7 @@ class JsonHarmonisationData(HarmonisationData) :
         self.apd_position_left_y = None
         self.apd_position_right_x = None
         self.apd_position_right_y = None
+        self.distance_laser_apd_in_px = None
 
     def write(self, key:str, value:str):
         self.data_dict[key] = value
