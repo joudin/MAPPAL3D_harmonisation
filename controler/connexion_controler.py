@@ -69,7 +69,7 @@ class ConnexionControler(metaclass=SingletonMeta):
    
     def connexion_action(self):
         # on crée un object camera et on tente de se connecter
-        cam = create_camera("Simu","0000000000")
+        cam = create_camera("NIT","0000000000")
         connexion_status = False
         if cam is not None:
             connexion_status = cam.connect()
@@ -125,6 +125,9 @@ class ConnexionControler(metaclass=SingletonMeta):
     def exit_application_action(self):
         cam = get_active_camera()
         if cam is not None:
-            cam.disconnect()
+            try:
+                cam.disconnect()
+            except:
+                pass
         QApplication.quit() 
         QWidget.close(self.connexion_window)

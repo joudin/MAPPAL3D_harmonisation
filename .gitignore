@@ -1,4 +1,5 @@
 myenv/
+myenv38/
 model/__pycache__/
 view/__pycache__/
 controler/__pycache__/

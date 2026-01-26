@@ -10,6 +10,9 @@ from tools.singleton import SingletonMeta
 from typing_extensions import override
 from model.calculations import build_fake_spot_laser_image, make_random_noise, build_fake_apd_image
 from model.data_supplements import XDIM, YDIM
+import tools.NITLibrary_x64_252_py38 as NIT
+import threading
+from model.data_supplements import XDIM, YDIM
 
 # Active camera accessor (service) : stocke l'instance de caméra créée
 _active_camera = None
@@ -76,7 +79,86 @@ class SimulationCamera(Camera):
     @override
     def disconnect(self):
         print(f'Camera {self.camera_type} disconnected')
+   
+class OneShotObserver(NIT.NITUserObserver):
+    def __init__(self):
+        super().__init__()
+        self.event = threading.Event()
+        self.frame = None
+        self.info = None
 
+    def onNewFrame(self, array, info):
+        """
+        Méthode appelée automatiquement par le SDK
+        dès qu'une nouvelle image arrive.
+        """
+        # Copier impérativement pour détacher du buffer interne du SDK
+        self.frame = array.copy()
+        self.info = info
+        self.event.set()
+
+    # Les deux méthodes suivantes sont optionnelles :
+    def onStart(self):
+        pass
+
+    def onStop(self):
+        pass
+
+class NitCamera(Camera):
+    def __init__(self,camera_type: str, camera_sn: str):
+        self.camera_type = camera_type
+        self.camera_sn = camera_sn
+        self.dev = None
+        self.obs = None
+
+    @override
+    def __str__(self):
+        return f'********************\nCamera name : {self.camera_sn}\nSerial number : {self.camera_sn}\n********************'
+    
+    @override
+    def connect(self) -> bool:
+        status = False
+        try:
+            NIT.NITManager.useUsb = True
+            self.mgr = NIT.NITManager.getInstance()
+
+            # 2) Ouvrir la caméra
+            self.dev = self.mgr.openOneDevice()
+        
+            # 3) Instancier notre observer
+            self.obs = OneShotObserver()
+
+            # 4) Brancher l'observer dans le pipeline
+            self.dev << self.obs
+            status = True
+            print(f'Camera {self.camera_type} connected')
+        except:
+            print(f'Echec connexion camera {self.camera_type}')
+        return status
+
+    @override
+    def stop(self) -> None:
+        print(f'Camera {self.camera_type} stopped')
+
+    @override
+    def snapshot(self, object:str) -> np.array:
+        self.dev.captureNFrames(1)
+
+        # attendre l’arrivée d’une frame
+        self.dev.waitEndCapture()
+
+        if self.obs.frame is None:
+            #raise TimeoutError("Aucune image reçue avant timeout.")
+            dim = (YDIM,XDIM)
+            return np.zeros(dim)
+        else:
+            return self.obs.frame
+    
+    @override
+    def disconnect(self):
+        self.obs.disconnect()
+        NIT.NITManager.destroyInstance()
+        print(f'Camera {self.camera_type} disconnected')
 
 def create_camera(camera_type: str, camera_sn: str) -> Camera:
     if camera_type == "Simu":
@@ -84,6 +166,13 @@ def create_camera(camera_type: str, camera_sn: str) -> Camera:
         _set_active_camera(camera)
         print("Camera simu recognized")
         return camera
+    
+    elif camera_type == "NIT":
+        camera = NitCamera(camera_type, camera_sn)
+        _set_active_camera(camera)
+        print("Camera NIT recognized")
+        return camera
     else:
         print("Camera not recognized")
+   
     
