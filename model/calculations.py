@@ -7,7 +7,7 @@ Created on Fri Oct  4 08:58:09 2024
 
 import numpy as np
 import scipy.optimize as optimize
-from math import sqrt
+from math import sqrt, atan
 
 def gaussian1D(amplitude: int,
              x_center: int,
@@ -161,7 +161,7 @@ def get_gaussian_divergence_and_diameter(gauss_data:dict, focal_length:float, pi
     x_waist_radius = np.sqrt(2) * gauss_data['x_sigma'] # [pixels]
     y_waist_radius = np.sqrt(2) * gauss_data['y_sigma'] # [pixels]
     mean_waist_radius = 0.5 * (x_waist_radius + y_waist_radius) # [pixels]
-    divergence = 2 * np.atan(mean_waist_radius * pixel_size / focal_length) # [rad]
+    divergence = 2 * atan(mean_waist_radius * pixel_size / focal_length) # [rad]
     data = {'x_waist_radius' : x_waist_radius, 'y_waist_radius' : y_waist_radius, 'mean_waist_radius': mean_waist_radius, 'divergence' : divergence}
     return data
 
