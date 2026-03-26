@@ -1,5 +1,5 @@
 
-from view.widget_state import ButtonOk, ComboBoxOk, ComboBoxNok, ButtonNoEmphasis
+from view.widget_state import ButtonOk,ButtonNok, ComboBoxOk, ComboBoxNok, ButtonNoEmphasis
 from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtGui import QImage, QPixmap
 from tools.singleton import SingletonMeta
@@ -40,7 +40,7 @@ class CubePositionControler(metaclass=SingletonMeta):
             self.camera_window.set_slider_value(self.camera_window.slider_width, int(XDIM/10))
             self.camera_window.set_slider_value(self.camera_window.slider_amplitude, get_active_camera().amplitude_simu)
 
-        self.camera_window.button_action_state = ButtonOk(self.camera_window.button_action)
+        self.camera_window.button_action_state = ButtonNok(self.camera_window.button_action)
         self.camera_window.button_action_extra_state = ButtonNoEmphasis(self.camera_window.button_action_extra)
 
 ############################ Callbacks #######################################
