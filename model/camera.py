@@ -8,7 +8,7 @@ import numpy as np
 #from model.calculations import build_fake_image, make_random_noise
 from tools.singleton import SingletonMeta
 from typing_extensions import override
-from model.calculations import build_fake_spot_laser_image, make_random_noise, build_fake_apd_image
+from model.calculations import build_fake_spot_laser_image, make_random_noise, build_fake_apd_image, filter_intensity_range
 from model.data_supplements import XDIM, YDIM
 import tools.NITLibrary_x64_252_py38 as NIT
 import threading
@@ -132,13 +132,49 @@ class NitCamera(Camera):
             self.dev << self.obs
             status = True
             print(f'Camera {self.camera_type} connected')
+
         except:
             print(f'Echec connexion camera {self.camera_type}')
+
+        try:
+            self.dev.setParamValueOf("Exposure Time", 100)
+            current = self.dev.paramStrValueOf("Exposure Time")
+            print("Exposure =", current)
+        except:
+            print("Echec réglage de l'exposition")
         return status
 
     @override
     def stop(self) -> None:
         print(f'Camera {self.camera_type} stopped')
+
+    @staticmethod
+    def _normalize_for_display(image: np.array) -> np.array:
+        """
+        Convertit l'image en 8-bit pour l'affichage sans suramplifié le bruit.
+        Utilise une normalisation robuste basée sur les percentiles.
+        """
+        if image is None:
+            return None
+
+        if image.dtype == np.uint8:
+            return image
+
+        # Pour les formats 12/14/16 bits provenant de la caméra NIT
+        img = image.astype(np.float32)
+        
+        # Normalisation robuste : utiliser percentiles 2%-98% au lieu de min/max
+        # pour éviter que des pixels de bruit extrêmes n'amplifient tout
+        p2 = np.percentile(img, 2)
+        p98 = np.percentile(img, 98)
+        
+        if p98 == p2:
+            return np.zeros_like(img, dtype=np.uint8)
+
+        # Limiter (clip) l'image aux percentiles, puis normaliser
+        img_clipped = np.clip(img, p2, p98)
+        normalized = 255.0 * (img_clipped - p2) / (p98 - p2)
+        return normalized.astype(np.uint8)
 
     @override
     def snapshot(self, object:str) -> np.array:
@@ -150,9 +186,18 @@ class NitCamera(Camera):
         if self.obs.frame is None:
             #raise TimeoutError("Aucune image reçue avant timeout.")
             dim = (YDIM,XDIM)
-            return np.zeros(dim)
-        else:
-            return self.obs.frame
+            return np.zeros(dim, dtype=np.uint8)
+
+        # le SDK NIT peut renvoyer uint16 (12 bits utile) : filtrer puis normaliser en 8 bits
+        np_image = self.obs.frame
+        # Assurer la bonne orientation (height, width) = (YDIM, XDIM)
+        if np_image.shape != (YDIM, XDIM):
+            np_image = np_image.T
+        #np_image = filter_intensity_range(np_image, drop_top_n=200)
+        # Enregistrer l'image en TXT (pour debug/archives)
+        np_image = self._normalize_for_display(np_image)
+
+        return np_image
     
     @override
     def disconnect(self):
