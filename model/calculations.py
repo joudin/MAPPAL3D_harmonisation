@@ -172,6 +172,9 @@ def get_center_position(position_1:tuple(), position_2:tuple()) -> dict:
     return data
 
 def get_substracted_image(image:np.array(float), background_image:np.array(float)) -> np.array(float):
+    if image.shape != background_image.shape:
+        raise ValueError(f"Image shapes do not match: image {image.shape}, background {background_image.shape}")
+    
     shape = image.shape
     substracted_image = np.zeros(shape, dtype=np.uint8)
     for i in range(shape[0]):
@@ -182,3 +185,45 @@ def get_substracted_image(image:np.array(float), background_image:np.array(float
                 substracted_image[i,j] = image[i,j] - background_image[i,j]
    
     return substracted_image
+
+
+def filter_intensity_range(np_image: np.ndarray, drop_top_n: int = 200) -> np.ndarray:
+    """Masque les 'drop_top_n' pixels d'intensité les plus élevées.
+
+    - garde les autres valeurs inchangées
+    - met à 0 les pixels éliminés
+    """
+    image = np.asarray(np_image)
+    if image.ndim not in (2, 3):
+        raise ValueError("filter_intensity_range attend une image 2D ou 3D")
+
+    flat = image.flatten()
+    if drop_top_n <= 0:
+        return image.copy()
+
+    n_pixels = flat.size
+    if drop_top_n >= n_pixels:
+        return np.zeros_like(image)
+
+    # seuil d'intensité du pixel (drop_top_n)-ème plus élevé
+    sorted_vals = np.partition(flat, -drop_top_n)
+    threshold = sorted_vals[-drop_top_n]
+
+    # on élimine les plus forts
+    filtered = np.array(image, copy=True)
+    filtered[filtered > threshold] = 0
+
+    # si plusieurs pixels ont exactement la valeur seuil, on garde max n_pixels-drop_top_n
+    # on peut affiner pour éliminer précisément le bon nombre en passant par un masque.
+    if np.count_nonzero(image > threshold) < drop_top_n:
+        extras = drop_top_n - np.count_nonzero(image > threshold)
+        if extras > 0:
+            threshold_mask = (image == threshold)
+            inds = np.flatnonzero(threshold_mask)
+            if extras < len(inds):
+                remove_inds = inds[:extras]
+                filtered_flat = filtered.flatten()
+                filtered_flat[remove_inds] = 0
+                filtered = filtered_flat.reshape(image.shape)
+
+    return filtered
