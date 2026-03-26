@@ -163,14 +163,10 @@ class CameraWindowExtendedDivergence(CameraWindow):
         self.extra_layout_h.addWidget(self.extra_label)
         self.extra_layout_h.addWidget(self.extra_lineEdit)
         self.extra_layout_h.addWidget(self.extra_checkbox)
-        # Bouton pour calculer la position du spot
-        self.button_action_extra = QPushButton('Background', self)
-        self.extra_layout_v.addWidget(self.button_action_extra)
 
         # Liste des widgets necessitant un suivi de leur etat
         self.lineEdit_state = LineEditNoEmphasis(self.extra_lineEdit)
         self.extra_checkbox_state = CheckBoxNoEmphasis(self.extra_checkbox)
-        self.button_action_extra_state = ButtonNoEmphasis(self.button_action_extra)
 
 class CameraWindowExtendedFocusApd(CameraWindow):
     def __init__(self):

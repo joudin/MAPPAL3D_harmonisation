@@ -44,28 +44,25 @@ class DivergenceControler(metaclass=SingletonMeta):
             self.camera_window.set_slider_value(self.camera_window.slider_amplitude, get_active_camera().amplitude_simu)
         
         self.camera_window.button_action_state = ButtonNoEmphasis(self.camera_window.button_action)
-        self.camera_window.button_action_extra_state = ButtonNok(self.camera_window.button_action_extra)
-        self.camera_window.set_callback_connect_button(self.camera_window.button_action_extra, self.capture_background_action)
 ############################ Callbacks #######################################
 
     def build_instructions_text(self):
         self.instruction_text = ""
-        if type(self.camera_window.button_action_extra_state)== ButtonNok:
-            self.instruction_text += "Veuillez enregistrer une image de fond avant de continuer."
         if get_active_harmonisation_data().emission_final_wedge_width_in_mm is None:
-            if len(self.instruction_text) > 0:
-                self.instruction_text += "\n"
             self.instruction_text += "Pour plusieurs épaisseurs de cale pelable, mesurer la divergence jusqu'à observer un minimum.\nPuis enregistrer la divergence finale avec l'épaisseur de cale pelable définitive."
         
     def update_gui(self):
         # Mise à jour de la GUI en se basant sur les états des widgets
         self.camera_window.lineEdit_state.change_color()
-        self.camera_window.button_action_extra_state.change_color()
         # On met à jour le tableau image en soustrayant le background
         self.raw_image = get_active_camera().snapshot('SPOT_LASER')
-        self.np_image = get_substracted_image(self.raw_image.astype(np.uint8), get_active_harmonisation_data().background_image)
+        data = get_active_harmonisation_data()
+        if hasattr(data, 'background_image') and data.background_image is not None:
+            self.np_image = get_substracted_image(self.raw_image.astype(np.uint8), data.background_image)
+        else:
+            self.np_image = self.raw_image
         # On met à jour l'image de la camera
-        colored_image = cv2.applyColorMap(self.np_image, cv2.COLORMAP_BONE)
+        colored_image = cv2.applyColorMap(self.np_image, cv2.COLORMAP_JET)
         # Convertir BGR (OpenCV) vers RGB (QImage)
         colored_image = cv2.cvtColor(colored_image, cv2.COLOR_BGR2RGB)
         height, width = self.np_image.shape
@@ -123,16 +120,6 @@ class DivergenceControler(metaclass=SingletonMeta):
         action_thread = threading.Thread(target=self.divergence_action) 
         action_thread.start()
 
-    def capture_background_action(self):
-        data = get_active_harmonisation_data()
-        data.background_image = np.zeros((YDIM,XDIM), dtype=np.uint8)  # Reset background image
-        self.np_image = get_active_camera().snapshot('SPOT_LASER') 
-        # On enregistre l'image de fond dans les données
-        data.background_image = self.np_image.copy() # Ajouter à harmonistation data
-        self.qimage.save(f'{data.working_dir}/{data.read("SN")}_BACKGROUND.png', 'PNG')
-        self.camera_window.button_action_extra_state = ButtonNoEmphasis(self.camera_window.button_action_extra)
-        self.camera_window.log_text = "Image de fond enregistrée."
-
     def divergence_action(self):
         """
         Vérifier que le textField est rempli et valide
@@ -143,10 +130,6 @@ class DivergenceControler(metaclass=SingletonMeta):
         Mettre à jour le log
     
         """
-        if self.camera_window.button_action_extra_state.__class__.__name__ == "ButtonNok":
-            self.camera_window.log_text = "Veuillez d'abord enregistrer une image de fond avant de continuer."
-            return
-        
         if self.camera_window.extra_lineEdit.text() != "":
             # On vérifie que la valeur numérique entrée est correcte
             try:

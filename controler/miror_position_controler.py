@@ -65,7 +65,7 @@ class MirorPositionControler(metaclass=SingletonMeta):
         else:
             self.np_image = self.raw_image
         # On met à jour l'image de la camera
-        colored_image = cv2.applyColorMap(self.np_image.astype(np.uint8), cv2.COLORMAP_BONE)
+        colored_image = cv2.applyColorMap(self.np_image.astype(np.uint8), cv2.COLORMAP_JET)
         # Convertir BGR (OpenCV) vers RGB (QImage)
         colored_image = cv2.cvtColor(colored_image, cv2.COLOR_BGR2RGB)
         height, width = self.np_image.shape
