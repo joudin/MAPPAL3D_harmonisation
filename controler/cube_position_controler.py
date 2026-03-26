@@ -1,12 +1,12 @@
 
-from view.widget_state import ButtonOk, ComboBoxOk, ComboBoxNok
+from view.widget_state import ButtonOk, ComboBoxOk, ComboBoxNok, ButtonNoEmphasis
 from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtGui import QImage, QPixmap
 from tools.singleton import SingletonMeta
 from model.data_supplements import VERSION, XDIM, YDIM
 from model.camera import  get_active_camera
 from model.harmonisation_data import get_active_harmonisation_data
-from view.camera_window import CameraWindow
+from view.camera_window import CameraWindowExtendedCenterEmission
 import cv2
 from model.calculations import get_gauss_fit_params
 import threading
@@ -17,7 +17,7 @@ DELAY = 200
 class CubePositionControler(metaclass=SingletonMeta):
     def __init__(self):       
         # Comportement de la GUI
-        self.camera_window = CameraWindow()
+        self.camera_window = CameraWindowExtendedCenterEmission()
         self.camera_window.show()
         self.camera_window.set_callback_timer(self.camera_window.timer, self.update_gui)
         self.camera_window.set_timer_timeout(self.camera_window.timer, DELAY)
@@ -25,6 +25,7 @@ class CubePositionControler(metaclass=SingletonMeta):
         self.camera_window.set_button_label(self.camera_window.button_action, 'Enregistrer position du cube')
         self.camera_window.set_callback_connect_button(self.camera_window.button_next, self.next_button_action)
         self.camera_window.set_callback_connect_button(self.camera_window.button_exit, self.exit_application_action)
+        self.camera_window.set_callback_connect_button(self.camera_window.button_action_extra, self.capture_background_action)
         if get_active_camera().__class__.__name__ == "SimulationCamera":
             self.camera_window.set_callback_change_slider(self.camera_window.slider_x_centroid, self.x_centroid_change_slider_action)
             self.camera_window.set_callback_change_slider(self.camera_window.slider_y_centroid, self.y_centroid_change_slider_action)
@@ -39,22 +40,38 @@ class CubePositionControler(metaclass=SingletonMeta):
             self.camera_window.set_slider_value(self.camera_window.slider_width, int(XDIM/10))
             self.camera_window.set_slider_value(self.camera_window.slider_amplitude, get_active_camera().amplitude_simu)
 
+        self.camera_window.button_action_state = ButtonOk(self.camera_window.button_action)
+        self.camera_window.button_action_extra_state = ButtonNoEmphasis(self.camera_window.button_action_extra)
+
 ############################ Callbacks #######################################
 
     def build_instructions_text(self):
         self.instruction_text = ""
+        data = get_active_harmonisation_data()
+        if not hasattr(data, 'background_image') or data.background_image is None:
+            self.instruction_text += "Enregistrer une image de fond avant de continuer."
         if type(self.camera_window.button_action_state) == ButtonOk:
             pass
         else:
+            if len(self.instruction_text) > 0:
+                self.instruction_text += "\n"
             self.instruction_text += "Enregistrer la position du cube"
         
     def update_gui(self):
         # Mise à jour de la GUI en se basant sur les états des widgets
         self.camera_window.button_action_state.change_color()
+        self.camera_window.button_action_extra_state.change_color()
 
-        self.np_image = get_active_camera().snapshot('SPOT_LASER') 
+        self.raw_image = get_active_camera().snapshot('SPOT_LASER')
+        # On met à jour l'image de la camera en soustrayant le background si disponible
+        data = get_active_harmonisation_data()
+        if hasattr(data, 'background_image') and data.background_image is not None:
+            from model.calculations import get_substracted_image
+            self.np_image = get_substracted_image(self.raw_image, data.background_image)
+        else:
+            self.np_image = self.raw_image
         # On met à jour l'image de la camera
-        colored_image = cv2.applyColorMap(self.np_image.astype(np.uint8), cv2.COLORMAP_TURBO)
+        colored_image = cv2.applyColorMap(self.np_image.astype(np.uint8), cv2.COLORMAP_BONE)
         height, width = self.np_image.shape
         bytes_per_line = width
         # Convertir en QImage
@@ -96,6 +113,37 @@ class CubePositionControler(metaclass=SingletonMeta):
         action_thread = threading.Thread(target=self.position_cube_action) 
         action_thread.start()
 
+    def capture_background_action(self):
+        data = get_active_harmonisation_data()
+        data.background_image = np.zeros((YDIM,XDIM), dtype=np.uint8)  # Reset background image
+        
+        # Capturer 10 frames et faire la moyenne
+        num_frames = 10
+        accumulated_image = np.zeros((YDIM, XDIM), dtype=np.float32)
+        
+        self.camera_window.log_text = "Capture d'images de fond en cours..."
+        for i in range(num_frames):
+            frame = get_active_camera().snapshot('SPOT_LASER')
+            accumulated_image += frame.astype(np.float32)
+            self.camera_window.log_text = f"Capture {i+1}/{num_frames}..."
+            # Petite pause si nécessaire, mais snapshot devrait suffire
+        
+        # Calculer la moyenne (input déjà normalisé 0..255)
+        averaged_image = (accumulated_image / num_frames).astype(np.uint8)
+        
+        # On enregistre l'image de fond moyennée dans les données
+        data.background_image = averaged_image.copy()
+        self.qimage = self.qimage  # Garder la dernière pour sauvegarde PNG, ou utiliser averaged_image
+        # Créer QImage à partir de averaged_image pour sauvegarde
+        colored_image = cv2.applyColorMap(averaged_image, cv2.COLORMAP_BONE)
+        height, width = averaged_image.shape
+        bytes_per_line = width
+        qimage_averaged = QImage(colored_image.data, width, height, bytes_per_line * 3, QImage.Format_RGB888)
+        qimage_averaged.save(f'{data.working_dir}/{data.read("SN")}_BACKGROUND.png', 'PNG')
+        
+        self.camera_window.button_action_extra_state = ButtonNoEmphasis(self.camera_window.button_action_extra)
+        self.camera_window.log_text = "Image de fond moyennée enregistrée."
+
     def position_cube_action(self):
         """
         faire un fit gaussien de l'image pour déterminer la position du cube
@@ -104,8 +152,12 @@ class CubePositionControler(metaclass=SingletonMeta):
         Mettre à jour le log
         Mettre à jour l'état du bouton
         """
-        params = get_gauss_fit_params(self.np_image)
         data = get_active_harmonisation_data()
+        if not hasattr(data, 'background_image') or data.background_image is None:
+            self.camera_window.log_text = "Veuillez d'abord enregistrer une image de fond avant de continuer."
+            return
+        
+        params = get_gauss_fit_params(self.np_image)
         data.cube_position_x = params['x_center']
         data.cube_position_y = params['y_center']
         data.write(f"CUBE_POSITION_X_{data.step.upper()}", str(params['x_center']))
