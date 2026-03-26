@@ -137,7 +137,7 @@ class NitCamera(Camera):
             print(f'Echec connexion camera {self.camera_type}')
 
         try:
-            self.dev.setParamValueOf("Exposure Time", 100)
+            self.dev.setParamValueOf("Exposure Time", 1000)
             current = self.dev.paramStrValueOf("Exposure Time")
             print("Exposure =", current)
         except:
@@ -151,30 +151,14 @@ class NitCamera(Camera):
     @staticmethod
     def _normalize_for_display(image: np.array) -> np.array:
         """
-        Convertit l'image en 8-bit pour l'affichage sans suramplifié le bruit.
-        Utilise une normalisation robuste basée sur les percentiles.
+        Normalise l'image en 0..2**14 (14 bits) pour conserver l'intensité brute.
+        Retourne ensuite une version 8-bit pour affichage via colormap.
         """
-        if image is None:
-            return None
-
-        if image.dtype == np.uint8:
-            return image
-
-        # Pour les formats 12/14/16 bits provenant de la caméra NIT
-        img = image.astype(np.float32)
-        
-        # Normalisation robuste : utiliser percentiles 2%-98% au lieu de min/max
-        # pour éviter que des pixels de bruit extrêmes n'amplifient tout
-        p2 = np.percentile(img, 2)
-        p98 = np.percentile(img, 98)
-        
-        if p98 == p2:
-            return np.zeros_like(img, dtype=np.uint8)
-
-        # Limiter (clip) l'image aux percentiles, puis normaliser
-        img_clipped = np.clip(img, p2, p98)
-        normalized = 255.0 * (img_clipped - p2) / (p98 - p2)
-        return normalized.astype(np.uint8)
+        if image is None: return None
+        if image.dtype == np.uint8: return image
+        img = np.asarray(image, dtype=np.float32)
+        img = np.clip(img, 0, 2**14 - 1)
+        return ((img / (2**14 - 1)) * 255).round().astype(np.uint8)
 
     @override
     def snapshot(self, object:str) -> np.array:

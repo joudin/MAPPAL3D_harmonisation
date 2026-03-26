@@ -66,6 +66,8 @@ class DivergenceControler(metaclass=SingletonMeta):
         self.np_image = get_substracted_image(self.raw_image.astype(np.uint8), get_active_harmonisation_data().background_image)
         # On met à jour l'image de la camera
         colored_image = cv2.applyColorMap(self.np_image, cv2.COLORMAP_BONE)
+        # Convertir BGR (OpenCV) vers RGB (QImage)
+        colored_image = cv2.cvtColor(colored_image, cv2.COLOR_BGR2RGB)
         height, width = self.np_image.shape
         bytes_per_line = width
         # Convertir en QImage
