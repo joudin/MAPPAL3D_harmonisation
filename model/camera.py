@@ -40,6 +40,8 @@ class Camera(metaclass=SingletonMeta):
 
     def stop(self) -> None:
         pass
+    def set_exposure_time(self, exposure_time_ms: int) -> bool:
+        pass
     
 class SimulationCamera(Camera):
     def __init__(self,camera_type: str, camera_sn: str):
@@ -79,6 +81,7 @@ class SimulationCamera(Camera):
     @override
     def disconnect(self):
         print(f'Camera {self.camera_type} disconnected')
+
    
 class OneShotObserver(NIT.NITUserObserver):
     def __init__(self):
@@ -189,6 +192,17 @@ class NitCamera(Camera):
         NIT.NITManager.destroyInstance()
         print(f'Camera {self.camera_type} disconnected')
 
+    @override
+    def set_exposure_time(self, exposure_time_ms:int):
+        try:
+            self.dev.setParamValueOf("Exposure Time", exposure_time_ms)
+            current = self.dev.paramStrValueOf("Exposure Time")
+            print("Exposure =", current)
+            return True 
+        except:
+            print("Echec réglage de l'exposition")
+            return False
+        
 def create_camera(camera_type: str, camera_sn: str) -> Camera:
     if camera_type == "Simu":
         camera = SimulationCamera(camera_type, camera_sn)

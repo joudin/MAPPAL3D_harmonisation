@@ -6,7 +6,7 @@ Created on Fri Apr  5 10:16:06 2024
 """
 
 
-from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QSlider, QHBoxLayout, QLineEdit, QCheckBox, QGridLayout
+from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QSlider, QHBoxLayout, QLineEdit, QCheckBox, QGridLayout, QComboBox
 from PyQt5.QtGui import QFont, QImage, QPixmap
 from PyQt5 import QtCore
 from view.widget_state import ButtonNoEmphasis, ButtonNok, LineEditNoEmphasis, CheckBoxNoEmphasis
@@ -189,12 +189,12 @@ class CameraWindowExtendedCenterEmission(CameraWindow):
         self.add_extra_widget_center_emission()
 
     def add_extra_widget_center_emission(self):
-        # Bouton pour calculer la position du spot
+         # Bouton pour calculer la position du spot
         self.button_action_extra = QPushButton('Background', self)
         self.extra_layout_v.addWidget(self.button_action_extra)
 
         # Liste des widgets necessitant un suivi de leur etat
-        self.button_action_extra_state = ButtonNoEmphasis(self.button_action_extra)
+        self.button_action_extra_state = ButtonNoEmphasis(self.button_action_extra)    
 
 
 class CameraWindowApdPosition(QWidget):
@@ -253,6 +253,15 @@ class CameraWindowApdPosition(QWidget):
         self.button_right_action = QPushButton('Droite', self)
         self.button_right_results_label = QLabel('X=--- , Y=---', self)
 
+        # Exposition réglable
+        self.exposure_label = QLabel('Exposure (ms)', self)
+        self.exposure_combobox = QComboBox(self)
+        for value in [100, 500, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000]:
+            self.exposure_combobox.addItem(str(value), value)
+
+        # Bouton pour capturer le background (APD)
+        self.button_action_extra = QPushButton('Background', self)
+
         # Bouton pour calculer la position du spot
         self.button_action = QPushButton('Pass/Fail position APD', self)
 
@@ -281,6 +290,8 @@ class CameraWindowApdPosition(QWidget):
         controls_grid.addWidget(self.button_left_results_label, 2, 1)
         controls_grid.addWidget(self.button_right_action,  3, 0)
         controls_grid.addWidget(self.button_right_results_label, 3, 1)
+        controls_grid.addWidget(self.exposure_label, 4, 0)
+        controls_grid.addWidget(self.exposure_combobox, 4, 1)
 
         # encapsule la grille dans un QWidget (pour la mettre dans un QHBoxLayout)
         controls_widget = QWidget()
@@ -311,6 +322,7 @@ class CameraWindowApdPosition(QWidget):
             self.slider_layout_h_4.addWidget(self.slider_amplitude)
             self.main_layout_v.addLayout(self.slider_layout_h_4)
 
+        self.main_layout_v.addWidget(self.button_action_extra)
         self.main_layout_v.addWidget(self.button_action)
         self.main_layout_v.addWidget(self.button_next)
         self.main_layout_v.addWidget(self.button_exit)
@@ -319,6 +331,7 @@ class CameraWindowApdPosition(QWidget):
         self.setLayout(self.main_layout_v)
         # Liste des widgets necessitant un suivi de leur etat
         self.button_action_state = ButtonNok(self.button_action)
+        self.button_action_extra_state = ButtonNok(self.button_action_extra)
         self.button_up_action_state = ButtonNok(self.button_up_action)
         self.button_down_action_state = ButtonNok(self.button_down_action)
         self.button_left_action_state = ButtonNok(self.button_left_action)
