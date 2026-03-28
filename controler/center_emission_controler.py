@@ -26,8 +26,6 @@ class CenterEmissionControler(metaclass=SingletonMeta):
         self.camera_window.set_button_label(self.camera_window.button_action, 'Enregistrer position spot laser')
         self.camera_window.set_callback_connect_button(self.camera_window.button_next, self.next_button_action)
         self.camera_window.set_callback_connect_button(self.camera_window.button_exit, self.exit_application_action)
-        self.camera_window.button_action_extra_state = ButtonNok(self.camera_window.button_action)
-        self.camera_window.set_callback_connect_button(self.camera_window.button_action_extra, self.capture_background_action)
 
         if get_active_camera().__class__.__name__ == "SimulationCamera":
             self.camera_window.set_callback_change_slider(self.camera_window.slider_x_centroid, self.x_centroid_change_slider_action)
@@ -47,20 +45,19 @@ class CenterEmissionControler(metaclass=SingletonMeta):
 
     def build_instructions_text(self):
         self.instruction_text = ""
-        if type(self.camera_window.button_action_extra_state)== ButtonNok:
-            self.instruction_text += "Veuillez enregistrer une image de fond avant de continuer."
         if type(self.camera_window.button_action_state) == ButtonNok:
-            if(len(self.instruction_text) > 0):
-                self.instruction_text += "\n"
             self.instruction_text += "Enregistrer la position du spot laser"
         
     def update_gui(self):
         # Mise à jour de la GUI en se basant sur les états des widgets
         self.camera_window.button_action_state.change_color()
-        self.camera_window.button_action_extra_state.change_color()
         # On met à jour le tableau image en soustrayant le background
         self.raw_image = get_active_camera().snapshot('SPOT_LASER')
-        self.np_image = get_substracted_image(self.raw_image, get_active_harmonisation_data().background_image) 
+        data = get_active_harmonisation_data()
+        if hasattr(data, 'background_image') and data.background_image is not None:
+            self.np_image = get_substracted_image(self.raw_image, data.background_image)
+        else:
+            self.np_image = self.raw_image 
         # On met à jour l'image de la camera
         colored_image = cv2.applyColorMap(self.np_image.astype(np.uint8), cv2.COLORMAP_TURBO)
         # Convertir BGR (OpenCV) vers RGB (QImage)
@@ -98,16 +95,6 @@ class CenterEmissionControler(metaclass=SingletonMeta):
         if cam.__class__.__name__ == "SimulationCamera":
             cam.amplitude_simu = self.camera_window.slider_amplitude.value()
 
-    def capture_background_action(self):
-        data = get_active_harmonisation_data()
-        data.background_image = np.zeros((YDIM,XDIM), dtype=np.uint8)  # Reset background image
-        self.np_image = get_active_camera().snapshot('SPOT_LASER') 
-        # On enregistre l'image de fond dans les données
-        data.background_image = self.np_image.copy() # Ajouter à harmonistation data
-        self.qimage.save(f'{data.working_dir}/{data.read("SN")}_BACKGROUND.png', 'PNG')
-        self.camera_window.button_action_extra_state = ButtonNoEmphasis(self.camera_window.button_action_extra)
-        self.camera_window.log_text = "Image de fond enregistrée."
-
     def run_save_postion_spot_laser_on_new_thread(self):
         self.camera_window.log_text = "Enregistrement de la position du spot laser en cours..."
         # On lance le calcul sur un autre thread pour ne pas bloquer la GUI
@@ -122,10 +109,6 @@ class CenterEmissionControler(metaclass=SingletonMeta):
         Mettre à jour le log
         Mettre à jour l'état du bouton
         """
-        if type(self.camera_window.button_action_extra_state) == ButtonNok:
-            self.camera_window.log_text = "Veuillez d'abord enregistrer une image de fond avant de continuer."
-            return
-        
         params = get_gauss_fit_params(self.np_image)
         data = get_active_harmonisation_data()
         data.laser_position_x = params['x_center']
