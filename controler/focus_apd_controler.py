@@ -8,6 +8,7 @@ from model.camera import  get_active_camera
 from model.harmonisation_data import get_active_harmonisation_data
 from view.camera_window import CameraWindowExtendedFocusApd
 from controler.center_emission_controler import CenterEmissionControler
+from model.calculations import get_substracted_image
 import cv2
 import threading
 import numpy as np
@@ -53,8 +54,12 @@ class FocusApdControler(metaclass=SingletonMeta):
         # Mise à jour de la GUI en se basant sur les états des widgets
         self.camera_window.button_action_state.change_color()
         self.camera_window.lineEdit_state.change_color()
-
-        self.np_image = get_active_camera().snapshot('APD') 
+        self.raw_image = get_active_camera().snapshot('APD') 
+        data = get_active_harmonisation_data()
+        if hasattr(data, 'background_image') and data.background_image is not None:
+            self.np_image = get_substracted_image(self.raw_image.astype(np.uint8), data.background_image)
+        else:
+            self.np_image = self.raw_image
         # On met à jour l'image de la camera
         colored_image = cv2.applyColorMap(self.np_image.astype(np.uint8), cv2.COLORMAP_TURBO)
         # Convertir BGR (OpenCV) vers RGB (QImage)
