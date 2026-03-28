@@ -1,6 +1,6 @@
 
 from view.widget_state import ButtonOk, ButtonNok, ButtonNoEmphasis, ComboBoxNok, LineEditNoEmphasis, LineEditNok
-from PyQt5.QtWidgets import QApplication, QWidget
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QPen, QColor
 from tools.singleton import SingletonMeta
 from model.data_supplements import VERSION, XDIM, YDIM, APD_CENTERS_DISTANCE_THRESHOLD_IN_PX
@@ -15,8 +15,14 @@ import numpy as np
 DELAY = 200
 
 class ApdPositionControler(metaclass=SingletonMeta):
+    
     def __init__(self):       
         # Comportement de la GUI
+        self.qimage_to_save_up = QImage(XDIM, YDIM, QImage.Format_RGB888)
+        self.qimage_to_save_down = QImage(XDIM, YDIM, QImage.Format_RGB888)
+        self.qimage_to_save_left = QImage(XDIM, YDIM, QImage.Format_RGB888)
+        self.qimage_to_save_right = QImage(XDIM, YDIM, QImage.Format_RGB888)
+
         self.camera_window = CameraWindowApdPosition()
         self.camera_window.show()
         self.camera_window.set_callback_timer(self.camera_window.timer, self.update_gui)
@@ -25,12 +31,40 @@ class ApdPositionControler(metaclass=SingletonMeta):
         self.camera_window.set_callback_connect_button(self.camera_window.button_action_extra, self.capture_background_action)
         self.camera_window.set_callback_connect_button(self.camera_window.button_next, self.next_button_action)
         self.camera_window.set_callback_connect_button(self.camera_window.button_exit, self.exit_application_action)
-        self.camera_window.set_callback_connect_button(self.camera_window.button_up_action, self.run_apd_position_up_on_new_thread)
-        self.camera_window.set_callback_connect_button(self.camera_window.button_down_action, self.run_apd_position_down_on_new_thread)
-        self.camera_window.set_callback_connect_button(self.camera_window.button_left_action, self.run_apd_position_left_on_new_thread)
-        self.camera_window.set_callback_connect_button(self.camera_window.button_right_action, self.run_apd_position_right_on_new_thread)
+        self.camera_window.set_callback_connect_button(self.camera_window.button_up_action, self.apd_position_up)
+        self.camera_window.set_callback_connect_button(self.camera_window.button_down_action, self.apd_position_down)
+        self.camera_window.set_callback_connect_button(self.camera_window.button_left_action, self.apd_position_left)
+        self.camera_window.set_callback_connect_button(self.camera_window.button_right_action, self.apd_position_right)
         self.camera_window.exposure_combobox.currentIndexChanged.connect(self.set_exposure_time_action)
         self.camera_window.button_action_extra_state = ButtonNok(self.camera_window.button_action_extra)
+        self.camera_window.set_callback_change_spin_box(self.camera_window.xcentroid_up_spinbox, self.xcentroid_up_change)
+        self.camera_window.set_callback_change_spin_box(self.camera_window.ycentroid_up_spinbox, self.ycentroid_up_change)
+        self.camera_window.set_callback_change_spin_box(self.camera_window.radius_up_spinbox, self.radius_up_change)
+        self.camera_window.set_callback_change_spin_box(self.camera_window.xcentroid_down_spinbox, self.xcentroid_down_change)
+        self.camera_window.set_callback_change_spin_box(self.camera_window.ycentroid_down_spinbox, self.ycentroid_down_change)
+        self.camera_window.set_callback_change_spin_box(self.camera_window.radius_down_spinbox, self.radius_down_change)
+        self.camera_window.set_callback_change_spin_box(self.camera_window.xcentroid_left_spinbox, self.xcentroid_left_change)
+        self.camera_window.set_callback_change_spin_box(self.camera_window.ycentroid_left_spinbox, self.ycentroid_left_change)
+        self.camera_window.set_callback_change_spin_box(self.camera_window.radius_left_spinbox, self.radius_left_change)
+        self.camera_window.set_callback_change_spin_box(self.camera_window.xcentroid_right_spinbox, self.xcentroid_right_change)
+        self.camera_window.set_callback_change_spin_box(self.camera_window.ycentroid_right_spinbox, self.ycentroid_right_change)
+        self.camera_window.set_callback_change_spin_box(self.camera_window.radius_right_spinbox, self.radius_right_change)
+
+        APD_RADIUS = 103
+        self.camera_window.set_spin_box_value(self.camera_window.xcentroid_up_spinbox, int(XDIM/2))
+        self.camera_window.set_spin_box_value(self.camera_window.ycentroid_up_spinbox,int(YDIM/2))
+        self.camera_window.set_spin_box_value(self.camera_window.radius_up_spinbox,APD_RADIUS)
+        self.camera_window.set_spin_box_value(self.camera_window.xcentroid_down_spinbox,int(XDIM/2))
+        self.camera_window.set_spin_box_value(self.camera_window.ycentroid_down_spinbox,int(YDIM/2))
+        self.camera_window.set_spin_box_value(self.camera_window.radius_down_spinbox,APD_RADIUS)
+        self.camera_window.set_spin_box_value(self.camera_window.xcentroid_left_spinbox,int(XDIM/2))
+        self.camera_window.set_spin_box_value(self.camera_window.ycentroid_left_spinbox,int(YDIM/2))
+        self.camera_window.set_spin_box_value(self.camera_window.radius_left_spinbox,APD_RADIUS)
+        self.camera_window.set_spin_box_value(self.camera_window.xcentroid_right_spinbox,int(XDIM/2))
+        self.camera_window.set_spin_box_value(self.camera_window.ycentroid_right_spinbox,int(YDIM/2))
+        self.camera_window.set_spin_box_value(self.camera_window.radius_right_spinbox,APD_RADIUS)
+
+        
         # applique l'exposition initiale
         self.set_exposure_time_action()
         if get_active_camera().__class__.__name__ == "SimulationCamera":
@@ -46,32 +80,7 @@ class ApdPositionControler(metaclass=SingletonMeta):
             self.camera_window.set_slider_value(self.camera_window.slider_y_centroid, int(YDIM/2))
             self.camera_window.set_slider_value(self.camera_window.slider_width, int(XDIM/10))
             self.camera_window.set_slider_value(self.camera_window.slider_amplitude, get_active_camera().amplitude_simu)
-        # PAramètres pour fit circulaires
-        DELTA_CENTER = 70
-        LIM_DELTA_CENTER = 200
-
-
-        # For circle fitting
-        I_MIN = 10 
-        I_STD = 100
-        I_MAX = 255 
-
-        APD_R_MIN = 93
-        APD_R_STD = 103
-        APD_R_MAX = 113 
-
-        DECAY_MIN = 100
-        DECAY_STD = 300
-        DECAY_MAX = 600
-
-        pulse_center_x = int(YDIM/2) #160
-        pulse_center_y = int(XDIM/2) #128
-
-        self.bounds=([I_MIN,  pulse_center_x-LIM_DELTA_CENTER, pulse_center_y-LIM_DELTA_CENTER, APD_R_MIN, DECAY_MIN],   # bornes inf
-                [I_MAX, pulse_center_x+LIM_DELTA_CENTER, pulse_center_y+LIM_DELTA_CENTER, APD_R_MAX, DECAY_MAX])   # bornes sup
-     
-        self.p0_init = (I_STD, XDIM/2, YDIM/2, APD_R_STD, DECAY_STD)
-
+      
 ############################ Callbacks #######################################
 
     def set_exposure_time_action(self):
@@ -138,39 +147,10 @@ class ApdPositionControler(metaclass=SingletonMeta):
             size = 10
             p.drawLine(int(get_active_harmonisation_data().laser_position_x) - size, int(get_active_harmonisation_data().laser_position_y) - size, int(get_active_harmonisation_data().laser_position_x) + size, int(get_active_harmonisation_data().laser_position_y) + size)  # diagonale \
             p.drawLine(int(get_active_harmonisation_data().laser_position_x) - size, int(get_active_harmonisation_data().laser_position_y) + size, int(get_active_harmonisation_data().laser_position_x) + size, int(get_active_harmonisation_data().laser_position_y) - size)  # diagonale /
-            p.end()
-        # On dessine les croix aux positions enregistrées
-        if get_active_harmonisation_data().apd_position_up_x is not None and get_active_harmonisation_data().apd_position_up_y is not None:
-            p = QPainter(self.qimage)
-            p.setPen(QPen(QColor(255, 0, 0), 1))
-            size = 10
-            p.drawLine(int(get_active_harmonisation_data().apd_position_up_x) - size, int(get_active_harmonisation_data().apd_position_up_y) - size, int(get_active_harmonisation_data().apd_position_up_x) + size, int(get_active_harmonisation_data().apd_position_up_y) + size)  # diagonale \
-            p.drawLine(int(get_active_harmonisation_data().apd_position_up_x) - size, int(get_active_harmonisation_data().apd_position_up_y) + size, int(get_active_harmonisation_data().apd_position_up_x) + size, int(get_active_harmonisation_data().apd_position_up_y) - size)  # diagonale /
-            p.end()
-        if get_active_harmonisation_data().apd_position_down_x is not None and get_active_harmonisation_data().apd_position_down_y is not None:
-            p = QPainter(self.qimage)
-            p.setPen(QPen(QColor(255, 0, 0), 1))
-            size = 10
-            p.drawLine(int(get_active_harmonisation_data().apd_position_down_x) - size, int(get_active_harmonisation_data().apd_position_down_y) - size, int(get_active_harmonisation_data().apd_position_down_x) + size, int(get_active_harmonisation_data().apd_position_down_y) + size)  # diagonale \
-            p.drawLine(int(get_active_harmonisation_data().apd_position_down_x) - size, int(get_active_harmonisation_data().apd_position_down_y) + size, int(get_active_harmonisation_data().apd_position_down_x) + size, int(get_active_harmonisation_data().apd_position_down_y) - size)  # diagonale /
-            p.end()
-        if get_active_harmonisation_data().apd_position_left_x is not None and get_active_harmonisation_data().apd_position_left_y is not None:
-            p = QPainter(self.qimage)
-            p.setPen(QPen(QColor(0, 255, 0), 1))
-            size = 10
-            p.drawLine(int(get_active_harmonisation_data().apd_position_left_x) - size, int(get_active_harmonisation_data().apd_position_left_y) - size, int(get_active_harmonisation_data().apd_position_left_x) + size, int(get_active_harmonisation_data().apd_position_left_y) + size)  # diagonale \
-            p.drawLine(int(get_active_harmonisation_data().apd_position_left_x) - size, int(get_active_harmonisation_data().apd_position_left_y) + size, int(get_active_harmonisation_data().apd_position_left_x) + size, int(get_active_harmonisation_data().apd_position_left_y) - size)  # diagonale /
-            p.end()
-        if get_active_harmonisation_data().apd_position_right_x is not None and get_active_harmonisation_data().apd_position_right_y is not None:
-            p = QPainter(self.qimage)
-            p.setPen(QPen(QColor(0, 255, 0), 1))
-            size = 10
-            p.drawLine(int(get_active_harmonisation_data().apd_position_right_x) - size, int(get_active_harmonisation_data().apd_position_right_y) - size, int(get_active_harmonisation_data().apd_position_right_x) + size, int(get_active_harmonisation_data().apd_position_right_y) + size)  # diagonale \
-            p.drawLine(int(get_active_harmonisation_data().apd_position_right_x) - size, int(get_active_harmonisation_data().apd_position_right_y) + size, int(get_active_harmonisation_data().apd_position_right_x) + size, int(get_active_harmonisation_data().apd_position_right_y) - size)  # diagonale /
-            p.end()
+            p.end()    
 
-        pixmap = QPixmap.fromImage(self.qimage)
-        self.camera_window.image_label.setPixmap(pixmap)
+        self.pixmap_cam = QPixmap.fromImage(self.qimage)
+        self.camera_window.image_label.setPixmap(self.pixmap_cam)
 
         # On construit le texte donnant les instructions restantes en fonction de l'état des widgets
         self.build_instructions_text()
@@ -234,22 +214,12 @@ class ApdPositionControler(metaclass=SingletonMeta):
             self.camera_window.log_text = f"Critere FAIL : distance entre centre APD et laser = {data_distances['euclidian']:.1f} px > {APD_CENTERS_DISTANCE_THRESHOLD_IN_PX} px"
             self.camera_window.button_action_state = ButtonNok(self.camera_window.button_action)
 
-    def run_apd_position_up_on_new_thread(self):
-        self.camera_window.log_text = "Enregistrement de l'image de l'APD et calcule de la position APD up en cours..."
-        # On lance le calcul sur un autre thread pour ne pas bloquer la GUI
-        action_thread = threading.Thread(target=self.apd_position_up) 
-        action_thread.start()
 
     def apd_position_up(self):
-        # 1 - Evaluer la position APD
-        # 2 - Enregistrer la position dans data
-        # 3 - Enregistrer la position dans le JSON
-        # 4 - Enregistrer l'image
-        # 5 - Mettre à jour le label résultat
-        # 6 - Mettre à jour le log
-        # 7 - Mettre à jour le statut bouton
-        # 8 - Afficher la position du centre sur l'image
-        # Si donnee dans position_up et position_down alors supprimer les deux données et passer au rouge le bouton down
+        # 1 - Enregistrer l'image
+        # 2 - Mettre à jour le log
+        # 3 - Mettre à jour le statut bouton
+
         data = get_active_harmonisation_data()
         image_to_process = self.np_image
         # On met à jour l'image de la camera
@@ -259,36 +229,18 @@ class ApdPositionControler(metaclass=SingletonMeta):
         height, width = image_to_process.shape
         bytes_per_line = width
         # Convertir en QImage
-        self.qimage_to_save = QImage(colored_image.data, width, height, bytes_per_line * 3, QImage.Format_RGB888)
-        self.qimage_to_save.save(f'{data.working_dir}/{data.read("SN")}APD_POSITION_UP.png', 'PNG')
-       
-        params = get_circle_fit_params(image_to_process,p0=self.p0_init, bounds=self.bounds)
-        data.apd_position_up_x = params['x_center']
-        data.apd_position_up_y = params['y_center']
-        data.write(f"APD_POSITION_UP_X", str(data.apd_position_up_x))
-        data.write(f"APD_POSITION_UP_Y", str(data.apd_position_up_y))
-        data.save()
+        self.qimage_to_save_up = QImage(colored_image.data, width, height, bytes_per_line * 3, QImage.Format_RGB888)
+        self.qimage_to_save_up.save(f'{data.working_dir}/{data.read("SN")}APD_POSITION_UP.png', 'PNG')
+        self.camera_window.apd_up_image_label.setPixmap(self.pixmap_cam)
         
-        self.camera_window.set_label_text(self.camera_window.button_up_results_label,f'X = {data.apd_position_up_x:.1f} Y = {data.apd_position_up_y:.1f}')
         self.camera_window.log_text = "Position APD haut enregistrée."
         self.camera_window.button_up_action_state = ButtonOk(self.camera_window.button_up_action)
-        
-    def run_apd_position_down_on_new_thread(self):
-        self.camera_window.log_text = "Enregistrement de l'image de l'APD et calcule de la position APD down en cours..."
-        # On lance le calcul sur un autre thread pour ne pas bloquer la GUI
-        action_thread = threading.Thread(target=self.apd_position_down) 
-        action_thread.start()
     
     def apd_position_down(self):
-        # 1 - Evaluer la position APD
-        # 2 - Enregistrer la position dans data
-        # 3 - Enregistrer la position dans le JSON
-        # 4 - Enregistrer l'image
-        # 5 - Mettre à jour le label résultat
-        # 6 - Mettre à jour le log
-        # 7 - Mettre à jour le statut bouton
-        # 8 - Afficher la position du centre sur l'image
-        # Si donnee dans position_up et position_down alors supprimer les deux données et passer au rouge le bouton down
+        # 1 - Enregistrer l'image
+        # 2 - Mettre à jour le log
+        # 3 - Mettre à jour le statut bouton
+
         data = get_active_harmonisation_data()
         image_to_process = self.np_image
         # On met à jour l'image de la camera
@@ -298,35 +250,19 @@ class ApdPositionControler(metaclass=SingletonMeta):
         height, width = image_to_process.shape
         bytes_per_line = width
         # Convertir en QImage
-        self.qimage_to_save = QImage(colored_image.data, width, height, bytes_per_line * 3, QImage.Format_RGB888)
-        self.qimage_to_save.save(f'{data.working_dir}/{data.read("SN")}APD_POSITION_DOWN.png', 'PNG')
-       
-        params = get_circle_fit_params(image_to_process,p0=self.p0_init, bounds=self.bounds)
-        data.apd_position_down_x = params['x_center']
-        data.apd_position_down_y = params['y_center']
-        data.write(f"APD_POSITION_DOWN_X", str(data.apd_position_down_x))
-        data.write(f"APD_POSITION_DOWN_Y", str(data.apd_position_down_y))
-        data.save()
-        self.camera_window.set_label_text(self.camera_window.button_down_results_label,f'X = {data.apd_position_down_x:.1f} Y = {data.apd_position_down_y:.1f}')
+        self.qimage_to_save_down = QImage(colored_image.data, width, height, bytes_per_line * 3, QImage.Format_RGB888)
+        self.qimage_to_save_down.save(f'{data.working_dir}/{data.read("SN")}APD_POSITION_DOWN.png', 'PNG')
+        self.camera_window.apd_down_image_label.setPixmap(self.pixmap_cam)
+
         self.camera_window.log_text = "Position APD bas enregistrée."
         self.camera_window.button_down_action_state = ButtonOk(self.camera_window.button_down_action)
 
-    def run_apd_position_left_on_new_thread(self):
-        self.camera_window.log_text = "Enregistrement de l'image de l'APD et calcule de la position APD left en cours..."
-        # On lance le calcul sur un autre thread pour ne pas bloquer la GUI
-        action_thread = threading.Thread(target=self.apd_position_left) 
-        action_thread.start()
 
     def apd_position_left(self):
-        # 1 - Evaluer la position APD
-        # 2 - Enregistrer la position dans data
-        # 3 - Enregistrer la position dans le JSON
-        # 4 - Enregistrer l'image
-        # 5 - Mettre à jour le label résultat
-        # 6 - Mettre à jour le log
-        # 7 - Mettre à jour le statut bouton
-        # 8 - Afficher la position du centre sur l'image
-        # Si donnee dans position_up et position_down alors supprimer les deux données et passer au rouge le bouton down
+        # 1 - Enregistrer l'image
+        # 2 - Mettre à jour le log
+        # 3 - Mettre à jour le statut bouton
+        
         data = get_active_harmonisation_data()
         image_to_process = self.np_image
         # On met à jour l'image de la camera
@@ -336,35 +272,18 @@ class ApdPositionControler(metaclass=SingletonMeta):
         height, width = image_to_process.shape
         bytes_per_line = width
         # Convertir en QImage
-        self.qimage_to_save = QImage(colored_image.data, width, height, bytes_per_line * 3, QImage.Format_RGB888)
-        self.qimage_to_save.save(f'{data.working_dir}/{data.read("SN")}APD_POSITION_LEFT.png', 'PNG')
-       
-        params = get_circle_fit_params(image_to_process,p0=self.p0_init, bounds=self.bounds)
-        data.apd_position_left_x = params['x_center']
-        data.apd_position_left_y = params['y_center']
-        data.write(f"APD_POSITION_LEFT_X", str(data.apd_position_left_x))
-        data.write(f"APD_POSITION_LEFT_Y", str(data.apd_position_left_y))
-        data.save()
-        self.camera_window.set_label_text(self.camera_window.button_left_results_label,f'X = {data.apd_position_left_x:.1f} Y = {data.apd_position_left_y:.1f}')
+        self.qimage_to_save_left = QImage(colored_image.data, width, height, bytes_per_line * 3, QImage.Format_RGB888)
+        self.qimage_to_save_left.save(f'{data.working_dir}/{data.read("SN")}APD_POSITION_LEFT.png', 'PNG')
+        self.camera_window.apd_left_image_label.setPixmap(self.pixmap_cam)
+
         self.camera_window.log_text = "Position APD gauche enregistrée."
         self.camera_window.button_left_action_state = ButtonOk(self.camera_window.button_left_action)
 
-    def run_apd_position_right_on_new_thread(self):
-        self.camera_window.log_text = "Enregistrement de l'image de l'APD et calcule de la position APD right en cours..."
-        # On lance le calcul sur un autre thread pour ne pas bloquer la GUI
-        action_thread = threading.Thread(target=self.apd_position_right) 
-        action_thread.start()
-
     def apd_position_right(self):
-        # 1 - Evaluer la position APD
-        # 2 - Enregistrer la position dans data
-        # 3 - Enregistrer la position dans le JSON
-        # 4 - Enregistrer l'image
-        # 5 - Mettre à jour le label résultat
-        # 6 - Mettre à jour le log
-        # 7 - Mettre à jour le statut bouton
-        # 8 - Afficher la position du centre sur l'image
-        # Si donnee dans position_up et position_down alors supprimer les deux données et passer au rouge le bouton down
+        # 1 - Enregistrer l'image
+        # 2 - Mettre à jour le log
+        # 3 - Mettre à jour le statut bouton
+
         data = get_active_harmonisation_data()
         image_to_process = self.np_image
         # On met à jour l'image de la camera
@@ -374,17 +293,10 @@ class ApdPositionControler(metaclass=SingletonMeta):
         height, width = image_to_process.shape
         bytes_per_line = width
         # Convertir en QImage
-        self.qimage_to_save = QImage(colored_image.data, width, height, bytes_per_line * 3, QImage.Format_RGB888)
-        self.qimage_to_save.save(f'{data.working_dir}/{data.read("SN")}APD_POSITION_RIGHT.png', 'PNG')
-       
-        params = get_circle_fit_params(image_to_process,p0=self.p0_init, bounds=self.bounds)
-        data.apd_position_right_x = params['x_center']
-        data.apd_position_right_y = params['y_center']
-        data.write(f"APD_POSITION_RIGHT_X", str(data.apd_position_right_x))
-        data.write(f"APD_POSITION_RIGHT_Y", str(data.apd_position_right_y))
-        data.save()
-        
-        self.camera_window.set_label_text(self.camera_window.button_right_results_label,f'X = {data.apd_position_right_x:.1f} Y = {data.apd_position_right_y:.1f}')
+        self.qimage_to_save_right = QImage(colored_image.data, width, height, bytes_per_line * 3, QImage.Format_RGB888)
+        self.qimage_to_save_right.save(f'{data.working_dir}/{data.read("SN")}APD_POSITION_RIGHT.png', 'PNG')
+        self.camera_window.apd_right_image_label.setPixmap(self.pixmap_cam)
+
         self.camera_window.log_text = "Position APD droit enregistrée."
         self.camera_window.button_right_action_state = ButtonOk(self.camera_window.button_right_action)
 
@@ -422,3 +334,119 @@ class ApdPositionControler(metaclass=SingletonMeta):
         cam = get_active_camera()
         if cam.__class__.__name__ == "SimulationCamera":
             cam.amplitude_simu = self.camera_window.slider_amplitude.value()
+
+    def draw_circle_on_image(self, label: QLabel, image: QImage, center_x: int, center_y: int, radius: int):
+        # Créer un QPainter pour dessiner sur l'image
+        painter = QPainter(image)
+        
+        # Configurer le pinceau
+        pen = QPen(QColor(255, 0, 0))  # Couleur rouge
+        pen.setWidth(2)  # Épaisseur du trait
+        painter.setPen(pen)
+        
+        # Dessiner le cercle
+        painter.drawEllipse(center_x - radius, center_y - radius, 2 * radius, 2 * radius)
+        
+        # Terminer le dessin
+        painter.end()
+        
+        # Mettre à jour le QLabel avec l'image modifiée
+        pixmap = QPixmap.fromImage(image)
+        label.setPixmap(pixmap)
+
+    def xcentroid_up_change(self):
+        self.cp_image = self.qimage_to_save_up.copy()
+        self.draw_circle_on_image(self.camera_window.apd_up_image_label, self.cp_image, self.camera_window.xcentroid_up_spinbox.value(),self.camera_window.ycentroid_up_spinbox.value() , self.camera_window.radius_up_spinbox.value())
+        data = get_active_harmonisation_data()
+        data.apd_position_up_x = self.camera_window.xcentroid_up_spinbox.value()
+        data.apd_position_up_y = self.camera_window.ycentroid_up_spinbox.value()
+        data.write(f"APD_POSITION_UP_X", str(data.apd_position_up_x))
+        data.write(f"APD_POSITION_UP_Y", str(data.apd_position_up_y))
+        data.save()
+
+    def ycentroid_up_change(self):
+        self.cp_image = self.qimage_to_save_up.copy()
+        self.draw_circle_on_image(self.camera_window.apd_up_image_label, self.cp_image, self.camera_window.xcentroid_up_spinbox.value(),self.camera_window.ycentroid_up_spinbox.value() , self.camera_window.radius_up_spinbox.value())
+        data = get_active_harmonisation_data()
+        data.apd_position_up_x = self.camera_window.xcentroid_up_spinbox.value()
+        data.apd_position_up_y = self.camera_window.ycentroid_up_spinbox.value()
+        data.write(f"APD_POSITION_UP_X", str(data.apd_position_up_x))
+        data.write(f"APD_POSITION_UP_Y", str(data.apd_position_up_y))
+        data.save()
+
+    def radius_up_change(self):
+        self.cp_image = self.qimage_to_save_up.copy()
+        self.draw_circle_on_image(self.camera_window.apd_up_image_label, self.cp_image, self.camera_window.xcentroid_up_spinbox.value(),self.camera_window.ycentroid_up_spinbox.value() , self.camera_window.radius_up_spinbox.value())
+
+    def xcentroid_down_change(self):
+        self.cp_image = self.qimage_to_save_down.copy()
+        self.draw_circle_on_image(self.camera_window.apd_down_image_label, self.cp_image, self.camera_window.xcentroid_down_spinbox.value(),self.camera_window.ycentroid_down_spinbox.value() , self.camera_window.radius_down_spinbox.value())
+        data = get_active_harmonisation_data()
+        data.apd_position_down_x = self.camera_window.xcentroid_down_spinbox.value()
+        data.apd_position_down_y = self.camera_window.ycentroid_down_spinbox.value()
+        data.write(f"APD_POSITION_DOWN_X", str(data.apd_position_down_x))
+        data.write(f"APD_POSITION_DOWN_Y", str(data.apd_position_down_y))
+        data.save()
+
+    def ycentroid_down_change(self):
+        self.cp_image = self.qimage_to_save_down.copy()
+        self.draw_circle_on_image(self.camera_window.apd_down_image_label, self.cp_image, self.camera_window.xcentroid_down_spinbox.value(),self.camera_window.ycentroid_down_spinbox.value() , self.camera_window.radius_down_spinbox.value())
+        data = get_active_harmonisation_data()
+        data.apd_position_down_x = self.camera_window.xcentroid_down_spinbox.value()
+        data.apd_position_down_y = self.camera_window.ycentroid_down_spinbox.value()
+        data.write(f"APD_POSITION_DOWN_X", str(data.apd_position_down_x))
+        data.write(f"APD_POSITION_DOWN_Y", str(data.apd_position_down_y))
+        data.save()
+
+    def radius_down_change(self):
+        self.cp_image = self.qimage_to_save_down.copy()
+        self.draw_circle_on_image(self.camera_window.apd_down_image_label, self.cp_image, self.camera_window.xcentroid_down_spinbox.value(),self.camera_window.ycentroid_down_spinbox.value() , self.camera_window.radius_down_spinbox.value())
+
+    def xcentroid_left_change(self):
+        self.cp_image = self.qimage_to_save_left.copy()
+        self.draw_circle_on_image(self.camera_window.apd_left_image_label, self.cp_image, self.camera_window.xcentroid_left_spinbox.value(),self.camera_window.ycentroid_left_spinbox.value() , self.camera_window.radius_left_spinbox.value())
+        data = get_active_harmonisation_data()
+        data.apd_position_left_x = self.camera_window.xcentroid_left_spinbox.value()
+        data.apd_position_left_y = self.camera_window.ycentroid_left_spinbox.value()
+        data.write(f"APD_POSITION_LEFT_X", str(data.apd_position_left_x))
+        data.write(f"APD_POSITION_LEFT_Y", str(data.apd_position_left_y))
+        data.save()
+
+    def ycentroid_left_change(self):
+        self.cp_image = self.qimage_to_save_left.copy()
+        self.draw_circle_on_image(self.camera_window.apd_left_image_label, self.cp_image, self.camera_window.xcentroid_left_spinbox.value(),self.camera_window.ycentroid_left_spinbox.value() , self.camera_window.radius_left_spinbox.value())
+        data = get_active_harmonisation_data()
+        data.apd_position_left_x = self.camera_window.xcentroid_left_spinbox.value()
+        data.apd_position_left_y = self.camera_window.ycentroid_left_spinbox.value()
+        data.write(f"APD_POSITION_LEFT_X", str(data.apd_position_left_x))
+        data.write(f"APD_POSITION_LEFT_Y", str(data.apd_position_left_y))
+        data.save()
+
+    def radius_left_change(self):
+        self.cp_image = self.qimage_to_save_left.copy()
+        self.draw_circle_on_image(self.camera_window.apd_left_image_label, self.cp_image, self.camera_window.xcentroid_left_spinbox.value(),self.camera_window.ycentroid_left_spinbox.value() , self.camera_window.radius_left_spinbox.value())
+
+    def xcentroid_right_change(self):
+        self.cp_image = self.qimage_to_save_right.copy()
+        self.draw_circle_on_image(self.camera_window.apd_right_image_label, self.cp_image, self.camera_window.xcentroid_right_spinbox.value(),self.camera_window.ycentroid_right_spinbox.value() , self.camera_window.radius_right_spinbox.value())
+        data = get_active_harmonisation_data()
+        data.apd_position_right_x = self.camera_window.xcentroid_right_spinbox.value()
+        data.apd_position_right_y = self.camera_window.ycentroid_right_spinbox.value()
+        data.write(f"APD_POSITION_RIGHT_X", str(data.apd_position_right_x))
+        data.write(f"APD_POSITION_RIGHT_Y", str(data.apd_position_right_y))
+        data.save()
+
+    def ycentroid_right_change(self):
+        self.cp_image = self.qimage_to_save_right.copy()
+        self.draw_circle_on_image(self.camera_window.apd_right_image_label, self.cp_image, self.camera_window.xcentroid_right_spinbox.value(),self.camera_window.ycentroid_right_spinbox.value() , self.camera_window.radius_right_spinbox.value())
+        data = get_active_harmonisation_data()
+        data.apd_position_right_x = self.camera_window.xcentroid_right_spinbox.value()
+        data.apd_position_right_y = self.camera_window.ycentroid_right_spinbox.value()
+        data.write(f"APD_POSITION_RIGHT_X", str(data.apd_position_right_x))
+        data.write(f"APD_POSITION_RIGHT_Y", str(data.apd_position_right_y))
+        data.save()
+
+    def radius_right_change(self):
+        self.cp_image = self.qimage_to_save_right.copy()
+        self.draw_circle_on_image(self.camera_window.apd_right_image_label, self.cp_image, self.camera_window.xcentroid_right_spinbox.value(),self.camera_window.ycentroid_right_spinbox.value() , self.camera_window.radius_right_spinbox.value())
+    

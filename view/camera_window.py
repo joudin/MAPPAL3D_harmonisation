@@ -6,13 +6,14 @@ Created on Fri Apr  5 10:16:06 2024
 """
 
 
-from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QSlider, QHBoxLayout, QLineEdit, QCheckBox, QGridLayout, QComboBox
+from PyQt5.QtWidgets import QSpinBox, QWidget, QPushButton, QVBoxLayout, QLabel, QSlider, QHBoxLayout, QLineEdit, QCheckBox, QGridLayout, QComboBox
 from PyQt5.QtGui import QFont, QImage, QPixmap
 from PyQt5 import QtCore
 from view.widget_state import ButtonNoEmphasis, ButtonNok, LineEditNoEmphasis, CheckBoxNoEmphasis
-from model.data_supplements import VERSION
+from model.data_supplements import VERSION,XDIM, YDIM
 from model.camera import get_active_camera
 from view.mpl_canvas import MplCanvas
+import numpy as np
 
 class CameraWindow(QWidget):
     def __init__(self):
@@ -220,7 +221,78 @@ class CameraWindowApdPosition(QWidget):
         pixmap = QPixmap.fromImage(self.camera_last_image)
         self.image_label = QLabel()
         self.image_label.setPixmap(pixmap)
-        
+
+        # Images des différentes positions
+        self.apd_up_image = QImage(XDIM, YDIM, QImage.Format_RGB888)
+        pixmap_up = QPixmap.fromImage(self.apd_up_image)
+        self.apd_up_image_label = QLabel()
+        self.apd_up_image_label.setPixmap(pixmap_up)
+
+        self.apd_down_image = QImage(XDIM, YDIM, QImage.Format_RGB888)
+        pixmap_down = QPixmap.fromImage(self.apd_down_image)
+        self.apd_down_image_label = QLabel()
+        self.apd_down_image_label.setPixmap(pixmap_down)
+
+        self.apd_right_image = QImage(XDIM, YDIM, QImage.Format_RGB888)
+        pixmap_right = QPixmap.fromImage(self.apd_right_image)
+        self.apd_right_image_label = QLabel()
+        self.apd_right_image_label.setPixmap(pixmap_right)
+
+        self.apd_left_image = QImage(XDIM, YDIM, QImage.Format_RGB888)
+        pixmap_left = QPixmap.fromImage(self.apd_left_image)
+        self.apd_left_image_label = QLabel()
+        self.apd_left_image_label.setPixmap(pixmap_left)
+
+       
+        # Ajout des QSpinBox pour xcentroid et ycentroid
+        self.xcentroid_up_label = QLabel("xcentroid", self)
+        self.xcentroid_up_spinbox = QSpinBox(self)
+        self.xcentroid_up_spinbox.setRange(0, 256)
+
+        self.xcentroid_down_label = QLabel("xcentroid", self)
+        self.xcentroid_down_spinbox = QSpinBox(self)
+        self.xcentroid_down_spinbox.setRange(0, 256)
+
+        self.xcentroid_left_label = QLabel("xcentroid", self)
+        self.xcentroid_left_spinbox = QSpinBox(self)
+        self.xcentroid_left_spinbox.setRange(0, 256)
+
+        self.xcentroid_right_label = QLabel("xcentroid", self)
+        self.xcentroid_right_spinbox = QSpinBox(self)
+        self.xcentroid_right_spinbox.setRange(0, 256)
+
+        self.ycentroid_up_label = QLabel("ycentroid", self)
+        self.ycentroid_up_spinbox = QSpinBox(self)
+        self.ycentroid_up_spinbox.setRange(0, 320)
+
+        self.ycentroid_down_label = QLabel("ycentroid", self)
+        self.ycentroid_down_spinbox = QSpinBox(self)
+        self.ycentroid_down_spinbox.setRange(0, 320)
+
+        self.ycentroid_left_label = QLabel("ycentroid", self)
+        self.ycentroid_left_spinbox = QSpinBox(self)
+        self.ycentroid_left_spinbox.setRange(0, 320)
+
+        self.ycentroid_right_label = QLabel("ycentroid", self)
+        self.ycentroid_right_spinbox = QSpinBox(self)
+        self.ycentroid_right_spinbox.setRange(0, 320)
+
+        self.radius_up_label = QLabel("Rayon", self)
+        self.radius_up_spinbox = QSpinBox(self)
+        self.radius_up_spinbox.setRange(80, 120)
+
+        self.radius_down_label = QLabel("Rayon", self)
+        self.radius_down_spinbox = QSpinBox(self)
+        self.radius_down_spinbox.setRange(80, 120)
+
+        self.radius_left_label = QLabel("Rayon", self)
+        self.radius_left_spinbox = QSpinBox(self)
+        self.radius_left_spinbox.setRange(80, 120)
+
+        self.radius_right_label = QLabel("Rayon", self)
+        self.radius_right_spinbox = QSpinBox(self)
+        self.radius_right_spinbox.setRange(80, 120)
+
         # Sliders utilisés en mode simulation pour régler la position du spot
         # Trois sliders horizontaux: x_centroid, y_centroid et width
         self.slider_x_centroid = QSlider(QtCore.Qt.Horizontal)
@@ -239,19 +311,15 @@ class CameraWindowApdPosition(QWidget):
 
         # Bouton pour calculer la position up de l'anneau
         self.button_up_action = QPushButton('Haut', self)
-        self.button_up_results_label = QLabel('X=--- , Y=---', self)
 
         # Bouton pour calculer la position down de l'anneau
         self.button_down_action = QPushButton('Bas', self)
-        self.button_down_results_label = QLabel('X=--- , Y=---', self)
 
         # Bouton pour calculer la position left de l'anneau
         self.button_left_action = QPushButton('Gauche', self)
-        self.button_left_results_label = QLabel('X=--- , Y=---', self)
 
         # Bouton pour calculer la position right de l'anneau
         self.button_right_action = QPushButton('Droite', self)
-        self.button_right_results_label = QLabel('X=--- , Y=---', self)
 
         # Exposition réglable
         self.exposure_label = QLabel('Exposure (ms)', self)
@@ -280,24 +348,70 @@ class CameraWindowApdPosition(QWidget):
         self.layout_h1.addStretch()
         self.layout_h1.addWidget(self.image_label)
         self.layout_h1.addStretch()
+
+        # crée la grille de contrôles
+        save_layout = QVBoxLayout()
+        save_layout.addWidget(self.button_up_action)
+        save_layout.addWidget(self.button_down_action)
+        save_layout.addWidget(self.button_left_action)
+        save_layout.addWidget(self.button_right_action)
+        save_layout.addWidget(self.exposure_label)
+        save_layout.addWidget(self.exposure_combobox)
+
+        # Grille de spinBox pour les coordonnées et le rayon
+        spin_box_grid_up = QGridLayout()
+        spin_box_grid_up.addWidget(self.xcentroid_up_label, 0,0)
+        spin_box_grid_up.addWidget(self.xcentroid_up_spinbox, 0,1)
+        spin_box_grid_up.addWidget(self.ycentroid_up_label, 1,0)
+        spin_box_grid_up.addWidget(self.ycentroid_up_spinbox, 1,1)
+        spin_box_grid_up.addWidget(self.radius_up_label, 2,0)
+        spin_box_grid_up.addWidget(self.radius_up_spinbox, 2,1)
+
+        spin_box_grid_down = QGridLayout()
+        spin_box_grid_down.addWidget(self.xcentroid_down_label, 0,0)
+        spin_box_grid_down.addWidget(self.xcentroid_down_spinbox, 0,1)
+        spin_box_grid_down.addWidget(self.ycentroid_down_label, 1,0)
+        spin_box_grid_down.addWidget(self.ycentroid_down_spinbox, 1,1)
+        spin_box_grid_down.addWidget(self.radius_down_label, 2,0)
+        spin_box_grid_down.addWidget(self.radius_down_spinbox, 2,1)
+
+        spin_box_grid_left = QGridLayout()
+        spin_box_grid_left.addWidget(self.xcentroid_left_label, 0,0)
+        spin_box_grid_left.addWidget(self.xcentroid_left_spinbox, 0,1)
+        spin_box_grid_left.addWidget(self.ycentroid_left_label, 1,0)
+        spin_box_grid_left.addWidget(self.ycentroid_left_spinbox, 1,1)
+        spin_box_grid_left.addWidget(self.radius_left_label, 2,0)
+        spin_box_grid_left.addWidget(self.radius_left_spinbox, 2,1)
+
+        spin_box_grid_right = QGridLayout()
+        spin_box_grid_right.addWidget(self.xcentroid_right_label, 0,0)
+        spin_box_grid_right.addWidget(self.xcentroid_right_spinbox, 0,1)
+        spin_box_grid_right.addWidget(self.ycentroid_right_label, 1,0)
+        spin_box_grid_right.addWidget(self.ycentroid_right_spinbox, 1,1)
+        spin_box_grid_right.addWidget(self.radius_right_label, 2,0)
+        spin_box_grid_right.addWidget(self.radius_right_spinbox, 2,1)
+
+
         # crée la grille de contrôles
         controls_grid = QGridLayout()
-        controls_grid.addWidget(self.button_up_action,     0, 0)
-        controls_grid.addWidget(self.button_up_results_label, 0, 1)
-        controls_grid.addWidget(self.button_down_action,   1, 0)
-        controls_grid.addWidget(self.button_down_results_label, 1, 1)
-        controls_grid.addWidget(self.button_left_action,   2, 0)
-        controls_grid.addWidget(self.button_left_results_label, 2, 1)
-        controls_grid.addWidget(self.button_right_action,  3, 0)
-        controls_grid.addWidget(self.button_right_results_label, 3, 1)
-        controls_grid.addWidget(self.exposure_label, 4, 0)
-        controls_grid.addWidget(self.exposure_combobox, 4, 1)
-
+        controls_grid.addWidget(self.apd_up_image_label, 0,0) #(Y,X)
+        controls_grid.addLayout(spin_box_grid_up, 0,1)
+        controls_grid.addWidget(self.apd_down_image_label, 1,0)
+        controls_grid.addLayout(spin_box_grid_down, 1,1)
+        controls_grid.addWidget(self.apd_right_image_label, 0,2)
+        controls_grid.addLayout(spin_box_grid_right, 0,3)
+        controls_grid.addWidget(self.apd_left_image_label, 1,2)
+        controls_grid.addLayout(spin_box_grid_left, 1,3)
+     
         # encapsule la grille dans un QWidget (pour la mettre dans un QHBoxLayout)
-        controls_widget = QWidget()
-        controls_widget.setLayout(controls_grid)
-        self.layout_h1.addWidget(controls_widget)
+        controls_grid_widget = QWidget()
+        controls_grid_widget.setLayout(controls_grid)
+
+        self.layout_h1.addLayout(save_layout)
         self.layout_h1.addStretch()
+        self.layout_h1.addWidget(controls_grid_widget)
+        self.layout_h1.addStretch()
+
         # Reste une place sur layout_h1 pour ajouter un graphique si besoin
         self.main_layout_v.addLayout(self.layout_h1)
 
@@ -366,3 +480,9 @@ class CameraWindowApdPosition(QWidget):
 
     def set_label_text(self, label:QLabel, text:str):
         label.setText(text)
+
+    def set_callback_change_spin_box(self, spin_box:QSpinBox, set_callback):
+        spin_box.valueChanged.connect(set_callback)
+
+    def set_spin_box_value(self, spin_box:QSpinBox, value:int):
+        spin_box.setValue(value)
