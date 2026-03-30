@@ -243,6 +243,12 @@ class CameraWindowApdPosition(QWidget):
         self.apd_left_image_label = QLabel()
         self.apd_left_image_label.setPixmap(pixmap_left)
 
+
+        # Ajout des labels images:
+        self.apd_up_image_label_name = QLabel("Haut")
+        self.apd_down_image_label_name = QLabel("Bas")
+        self.apd_left_image_label_name = QLabel("Gauche")
+        self.apd_right_image_label_name = QLabel("Droite")
        
         # Ajout des QSpinBox pour xcentroid et ycentroid
         self.xcentroid_up_label = QLabel("xcentroid", self)
@@ -360,36 +366,40 @@ class CameraWindowApdPosition(QWidget):
 
         # Grille de spinBox pour les coordonnées et le rayon
         spin_box_grid_up = QGridLayout()
-        spin_box_grid_up.addWidget(self.xcentroid_up_label, 0,0)
-        spin_box_grid_up.addWidget(self.xcentroid_up_spinbox, 0,1)
-        spin_box_grid_up.addWidget(self.ycentroid_up_label, 1,0)
-        spin_box_grid_up.addWidget(self.ycentroid_up_spinbox, 1,1)
-        spin_box_grid_up.addWidget(self.radius_up_label, 2,0)
-        spin_box_grid_up.addWidget(self.radius_up_spinbox, 2,1)
+        spin_box_grid_up.addWidget(self.apd_up_image_label_name, 0,0)
+        spin_box_grid_up.addWidget(self.xcentroid_up_label, 1,0)
+        spin_box_grid_up.addWidget(self.xcentroid_up_spinbox, 1,1)
+        spin_box_grid_up.addWidget(self.ycentroid_up_label, 2,0)
+        spin_box_grid_up.addWidget(self.ycentroid_up_spinbox, 2,1)
+        spin_box_grid_up.addWidget(self.radius_up_label, 3,0)
+        spin_box_grid_up.addWidget(self.radius_up_spinbox, 3,1)
 
         spin_box_grid_down = QGridLayout()
-        spin_box_grid_down.addWidget(self.xcentroid_down_label, 0,0)
-        spin_box_grid_down.addWidget(self.xcentroid_down_spinbox, 0,1)
-        spin_box_grid_down.addWidget(self.ycentroid_down_label, 1,0)
-        spin_box_grid_down.addWidget(self.ycentroid_down_spinbox, 1,1)
-        spin_box_grid_down.addWidget(self.radius_down_label, 2,0)
-        spin_box_grid_down.addWidget(self.radius_down_spinbox, 2,1)
+        spin_box_grid_down.addWidget(self.apd_down_image_label_name, 0,0)
+        spin_box_grid_down.addWidget(self.xcentroid_down_label, 1,0)
+        spin_box_grid_down.addWidget(self.xcentroid_down_spinbox, 1,1)
+        spin_box_grid_down.addWidget(self.ycentroid_down_label, 2,0)
+        spin_box_grid_down.addWidget(self.ycentroid_down_spinbox, 2,1)
+        spin_box_grid_down.addWidget(self.radius_down_label, 3,0)
+        spin_box_grid_down.addWidget(self.radius_down_spinbox, 3,1)
 
         spin_box_grid_left = QGridLayout()
-        spin_box_grid_left.addWidget(self.xcentroid_left_label, 0,0)
-        spin_box_grid_left.addWidget(self.xcentroid_left_spinbox, 0,1)
-        spin_box_grid_left.addWidget(self.ycentroid_left_label, 1,0)
-        spin_box_grid_left.addWidget(self.ycentroid_left_spinbox, 1,1)
-        spin_box_grid_left.addWidget(self.radius_left_label, 2,0)
-        spin_box_grid_left.addWidget(self.radius_left_spinbox, 2,1)
+        spin_box_grid_left.addWidget(self.apd_left_image_label_name, 0,0)
+        spin_box_grid_left.addWidget(self.xcentroid_left_label, 1,0)
+        spin_box_grid_left.addWidget(self.xcentroid_left_spinbox, 1,1)
+        spin_box_grid_left.addWidget(self.ycentroid_left_label, 2,0)
+        spin_box_grid_left.addWidget(self.ycentroid_left_spinbox, 2,1)
+        spin_box_grid_left.addWidget(self.radius_left_label, 3,0)
+        spin_box_grid_left.addWidget(self.radius_left_spinbox, 3,1)
 
         spin_box_grid_right = QGridLayout()
-        spin_box_grid_right.addWidget(self.xcentroid_right_label, 0,0)
-        spin_box_grid_right.addWidget(self.xcentroid_right_spinbox, 0,1)
-        spin_box_grid_right.addWidget(self.ycentroid_right_label, 1,0)
-        spin_box_grid_right.addWidget(self.ycentroid_right_spinbox, 1,1)
-        spin_box_grid_right.addWidget(self.radius_right_label, 2,0)
-        spin_box_grid_right.addWidget(self.radius_right_spinbox, 2,1)
+        spin_box_grid_right.addWidget(self.apd_right_image_label_name, 0,0)
+        spin_box_grid_right.addWidget(self.xcentroid_right_label, 1,0)
+        spin_box_grid_right.addWidget(self.xcentroid_right_spinbox, 1,1)
+        spin_box_grid_right.addWidget(self.ycentroid_right_label, 2,0)
+        spin_box_grid_right.addWidget(self.ycentroid_right_spinbox, 2,1)
+        spin_box_grid_right.addWidget(self.radius_right_label, 3,0)
+        spin_box_grid_right.addWidget(self.radius_right_spinbox, 3,1)
 
 
         # crée la grille de contrôles
