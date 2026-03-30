@@ -94,8 +94,6 @@ class ApdPositionControler(metaclass=SingletonMeta):
 
     def build_instructions_text(self):
         self.instruction_text = ""
-        if type(self.camera_window.button_action_extra_state) == ButtonNok:
-            self.instruction_text += "Veuillez enregistrer une image de fond avant de continuer."
         if type(self.camera_window.button_up_action_state) == ButtonNok:
             if len(self.instruction_text) > 0:
                 self.instruction_text += '\n'
@@ -140,6 +138,9 @@ class ApdPositionControler(metaclass=SingletonMeta):
         bytes_per_line = width
         # Convertir en QImage
         self.qimage = QImage(colored_image.data, width, height, bytes_per_line * 3, QImage.Format_RGB888)
+        # On calcule le centroid des positions APD:
+        x_mean = np.mean([self.camera_window.xcentroid_up_spinbox.value(), self.camera_window.xcentroid_down_spinbox.value(), self.camera_window.xcentroid_left_spinbox.value(), self.camera_window.xcentroid_right_spinbox.value()])
+        y_mean = np.mean([self.camera_window.ycentroid_up_spinbox.value(), self.camera_window.ycentroid_down_spinbox.value(), self.camera_window.ycentroid_left_spinbox.value(), self.camera_window.ycentroid_right_spinbox.value()])
         # On dessine un croix pour la position de référence du laser
         if get_active_harmonisation_data().laser_position_x is not None and get_active_harmonisation_data().laser_position_y is not None:
             p = QPainter(self.qimage)
@@ -147,7 +148,10 @@ class ApdPositionControler(metaclass=SingletonMeta):
             size = 10
             p.drawLine(int(get_active_harmonisation_data().laser_position_x) - size, int(get_active_harmonisation_data().laser_position_y) - size, int(get_active_harmonisation_data().laser_position_x) + size, int(get_active_harmonisation_data().laser_position_y) + size)  # diagonale \
             p.drawLine(int(get_active_harmonisation_data().laser_position_x) - size, int(get_active_harmonisation_data().laser_position_y) + size, int(get_active_harmonisation_data().laser_position_x) + size, int(get_active_harmonisation_data().laser_position_y) - size)  # diagonale /
-            p.end()    
+            p.setPen(QPen(QColor(255, 0, 0), 1))
+            p.drawLine(int(x_mean) - size, int(y_mean) - size, int(x_mean) + size, int(y_mean) + size)  # diagonale \
+            p.drawLine(int(x_mean) - size, int(y_mean) + size, int(x_mean) + size, int(y_mean) - size)  # diagonale /
+            p.end()
 
         self.pixmap_cam = QPixmap.fromImage(self.qimage)
         self.camera_window.image_label.setPixmap(self.pixmap_cam)
