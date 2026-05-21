@@ -139,7 +139,7 @@ class CubePositionControler(metaclass=SingletonMeta):
         data.background_image = averaged_image.copy()
         self.qimage = self.qimage  # Garder la dernière pour sauvegarde PNG, ou utiliser averaged_image
         # Créer QImage à partir de averaged_image pour sauvegarde
-        colored_image = cv2.applyColorMap(averaged_image, cv2.COLORMAP_RAINBOW)
+        colored_image = cv2.applyColorMap(averaged_image, cv2.COLORMAP_BONE)
         # Convertir BGR (OpenCV) vers RGB (QImage)
         colored_image = cv2.cvtColor(colored_image, cv2.COLOR_BGR2RGB)
         height, width = averaged_image.shape
