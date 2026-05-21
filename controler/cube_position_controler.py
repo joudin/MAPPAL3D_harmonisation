@@ -70,8 +70,10 @@ class CubePositionControler(metaclass=SingletonMeta):
             self.np_image = get_substracted_image(self.raw_image, data.background_image)
         else:
             self.np_image = self.raw_image
-        # On met à jour l'image de la camera
-        colored_image = cv2.applyColorMap(self.np_image.astype(np.uint8), cv2.COLORMAP_JET)
+        # On met à jour l'image de la camera en normalisant sur toute la plage de valeurs
+        normalized_image = cv2.normalize(self.np_image.astype(np.float32), None, 0, 255, cv2.NORM_MINMAX)
+        normalized_image = np.clip(normalized_image, 0, 255).astype(np.uint8)
+        colored_image = cv2.applyColorMap(normalized_image, cv2.COLORMAP_BONE)
         # Convertir BGR (OpenCV) vers RGB (QImage)
         colored_image = cv2.cvtColor(colored_image, cv2.COLOR_BGR2RGB)
         height, width = self.np_image.shape
@@ -137,7 +139,7 @@ class CubePositionControler(metaclass=SingletonMeta):
         data.background_image = averaged_image.copy()
         self.qimage = self.qimage  # Garder la dernière pour sauvegarde PNG, ou utiliser averaged_image
         # Créer QImage à partir de averaged_image pour sauvegarde
-        colored_image = cv2.applyColorMap(averaged_image, cv2.COLORMAP_JET)
+        colored_image = cv2.applyColorMap(averaged_image, cv2.COLORMAP_RAINBOW)
         # Convertir BGR (OpenCV) vers RGB (QImage)
         colored_image = cv2.cvtColor(colored_image, cv2.COLOR_BGR2RGB)
         height, width = averaged_image.shape

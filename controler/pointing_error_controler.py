@@ -54,8 +54,10 @@ class PointingErrorControler(metaclass=SingletonMeta):
          # On met à jour le tableau image en soustrayant le background
         self.raw_image = get_active_camera().snapshot('SPOT_LASER')
         self.np_image = get_substracted_image(self.raw_image, get_active_harmonisation_data().background_image)
-        # On met à jour l'image de la camera
-        colored_image = cv2.applyColorMap(self.np_image.astype(np.uint8), cv2.COLORMAP_JET)
+        # On met à jour l'image de la camera en normalisant sur toute la plage de valeurs
+        normalized_image = cv2.normalize(self.np_image.astype(np.float32), None, 0, 255, cv2.NORM_MINMAX)
+        normalized_image = np.clip(normalized_image, 0, 255).astype(np.uint8)
+        colored_image = cv2.applyColorMap(normalized_image, cv2.COLORMAP_JET)
         # Convertir BGR (OpenCV) vers RGB (QImage)
         colored_image = cv2.cvtColor(colored_image, cv2.COLOR_BGR2RGB)
         height, width = self.np_image.shape
