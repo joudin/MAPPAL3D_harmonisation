@@ -140,7 +140,7 @@ class NitCamera(Camera):
             print(f'Echec connexion camera {self.camera_type}')
 
         try:
-            self.dev.setParamValueOf("Exposure Time", 1000)
+            self.dev.setParamValueOf("Exposure Time", 500)
             current = self.dev.paramStrValueOf("Exposure Time")
             print("Exposure =", current)
         except:
