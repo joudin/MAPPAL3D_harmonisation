@@ -228,8 +228,10 @@ class ApdPositionControler(metaclass=SingletonMeta):
 
         data = get_active_harmonisation_data()
         image_to_process = self.np_image
-        # On met à jour l'image de la camera
-        colored_image = cv2.applyColorMap(image_to_process.astype(np.uint8), cv2.COLORMAP_BONE)
+        # On met à jour l'image de la camera en normalisant sur toute la plage de valeurs
+        normalized_image = cv2.normalize(image_to_process.astype(np.float32), None, 0, 255, cv2.NORM_MINMAX)
+        normalized_image = np.clip(normalized_image, 0, 255).astype(np.uint8)
+        colored_image = cv2.applyColorMap(normalized_image, cv2.COLORMAP_BONE)
         # Convertir BGR (OpenCV) vers RGB (QImage)
         colored_image = cv2.cvtColor(colored_image, cv2.COLOR_BGR2RGB)
         height, width = image_to_process.shape
@@ -249,8 +251,10 @@ class ApdPositionControler(metaclass=SingletonMeta):
 
         data = get_active_harmonisation_data()
         image_to_process = self.np_image
-        # On met à jour l'image de la camera
-        colored_image = cv2.applyColorMap(image_to_process.astype(np.uint8), cv2.COLORMAP_BONE)
+        # On met à jour l'image de la camera en normalisant sur toute la plage de valeurs
+        normalized_image = cv2.normalize(image_to_process.astype(np.float32), None, 0, 255, cv2.NORM_MINMAX)
+        normalized_image = np.clip(normalized_image, 0, 255).astype(np.uint8)
+        colored_image = cv2.applyColorMap(normalized_image, cv2.COLORMAP_BONE)
         # Convertir BGR (OpenCV) vers RGB (QImage)
         colored_image = cv2.cvtColor(colored_image, cv2.COLOR_BGR2RGB)
         height, width = image_to_process.shape
@@ -271,8 +275,10 @@ class ApdPositionControler(metaclass=SingletonMeta):
         
         data = get_active_harmonisation_data()
         image_to_process = self.np_image
-        # On met à jour l'image de la camera
-        colored_image = cv2.applyColorMap(image_to_process.astype(np.uint8), cv2.COLORMAP_BONE)
+        # On met à jour l'image de la camera en normalisant sur toute la plage de valeurs
+        normalized_image = cv2.normalize(image_to_process.astype(np.float32), None, 0, 255, cv2.NORM_MINMAX)
+        normalized_image = np.clip(normalized_image, 0, 255).astype(np.uint8)
+        colored_image = cv2.applyColorMap(normalized_image, cv2.COLORMAP_BONE)
         # Convertir BGR (OpenCV) vers RGB (QImage)
         colored_image = cv2.cvtColor(colored_image, cv2.COLOR_BGR2RGB)
         height, width = image_to_process.shape
@@ -292,8 +298,10 @@ class ApdPositionControler(metaclass=SingletonMeta):
 
         data = get_active_harmonisation_data()
         image_to_process = self.np_image
-        # On met à jour l'image de la camera
-        colored_image = cv2.applyColorMap(image_to_process.astype(np.uint8), cv2.COLORMAP_BONE)
+        # On met à jour l'image de la camera en normalisant sur toute la plage de valeurs
+        normalized_image = cv2.normalize(image_to_process.astype(np.float32), None, 0, 255, cv2.NORM_MINMAX)
+        normalized_image = np.clip(normalized_image, 0, 255).astype(np.uint8)
+        colored_image = cv2.applyColorMap(normalized_image, cv2.COLORMAP_BONE)
         # Convertir BGR (OpenCV) vers RGB (QImage)
         colored_image = cv2.cvtColor(colored_image, cv2.COLOR_BGR2RGB)
         height, width = image_to_process.shape
