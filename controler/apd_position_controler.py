@@ -219,6 +219,10 @@ class ApdPositionControler(metaclass=SingletonMeta):
         else:
             self.camera_window.log_text = f"Critere FAIL : distance entre centre APD et laser = {data_distances['euclidian']:.1f} px > {APD_CENTERS_DISTANCE_THRESHOLD_IN_PX} px"
             self.camera_window.button_action_state = ButtonNok(self.camera_window.button_action)
+            self.camera_window.button_up_action_state = ButtonNok(self.camera_window.button_up_action)
+            self.camera_window.button_down_action_state = ButtonNok(self.camera_window.button_down_action)
+            self.camera_window.button_left_action_state = ButtonNok(self.camera_window.button_left_action)
+            self.camera_window.button_right_action_state = ButtonNok(self.camera_window.button_right_action)
 
 
     def apd_position_up(self):
